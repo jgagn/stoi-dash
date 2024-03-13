@@ -19,11 +19,23 @@ import pickle
 # Assuming you have your database variable defined with your data
 #%% Get the sample data imported
 
-# File path where the pickled database is saved
-file_path = "test_data/CanadianChamps2023/database2"
-file_path = "test_data/EliteCanada2024/jrdatabase"
-# file_path = "test_data/EliteCanada2024/srdatabase"
-# Load the pickled database
+# # File path where the pickled database is saved
+# file_path = "test_data/CanadianChamps2023/database2"
+# file_path = "test_data/EliteCanada2024/jrdatabase"
+# # file_path = "test_data/EliteCanada2024/srdatabase"
+# # Load the pickled database
+
+#try absolute path
+
+import os
+
+# Get the absolute path to the directory containing the main app file
+base_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Construct the absolute path to the file
+file_path = os.path.join(base_dir, "test_data/EliteCanada2024/jrdatabase")
+
+
 with open(file_path, 'rb') as f:
     database = pickle.load(f)
 
@@ -100,6 +112,6 @@ def update_graph(selected_athlete, selected_results, y_axis):
     return {'data': traces, 'layout': layout}
 
 
-# Run the app
+# # Run the app
 # if __name__ == '__main__':
 #     app.run_server(debug=True)
