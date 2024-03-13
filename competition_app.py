@@ -101,5 +101,5 @@ def update_graph(selected_athlete, selected_results, y_axis):
 
 
 # Run the app
-if __name__ == '__main__':
-    app.run_server(debug=True)
+# if __name__ == '__main__':
+#     app.run_server(debug=True)
