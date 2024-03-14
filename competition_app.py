@@ -21,6 +21,8 @@ import os
 # from athlete_layout import *
 # Assuming you have your database variable defined with your data
 
+# Import the print function
+from builtins import print
 #%% Import Data 
 #use absolute path
 
@@ -53,9 +55,9 @@ def get_color(score, max_score):
 def update_bubble_plot(day, apparatus):
     data = {'x': [], 'y': [], 'size': [], 'name': [], 'score': [], 'color': []}
     max_score = max([stats['Score'] for values in database.values() if day in values for app, stats in values[day].items() if app == apparatus])
+
     exp = 3  # Adjust this as needed
-    # Assuming 'data' is your DataFrame containing the scatter plot data
-    
+
     for name, values in database.items():
         if day in values:
             for app, stats in values[day].items():
@@ -72,12 +74,18 @@ def update_bubble_plot(day, apparatus):
 
                     data['name'].append(name)
                     data['score'].append(stats['Score'])
-                    data['color'].append(get_color(stats['Score'] ** exp, max_score ** exp))
+                    
                     #make it zero if its nan
                     if math.isnan(stats['Score']):
                         size = 0.0
+                        color = 0.0
                     else:
                         size = stats['Score']
+                        color = stats['Score']
+                        
+                    data['color'].append(get_color(color ** exp, max_score ** exp))
+                        
+                        
                     size_exp = 1.5
                     if apparatus == "AA":
                         data['size'].append((size/ 6) ** size_exp)
@@ -114,7 +122,14 @@ def update_plot(day, apparatus):
     data = update_bubble_plot(day, apparatus)
     fig = px.scatter(data, x='x', y='y', color='color', size='size', hover_name='name', text='name', 
                      color_continuous_scale='Viridis', opacity=0.6)
-    fig.update_layout(title="Interactive Bubble Chart", xaxis_title="E score", yaxis_title="D score")
+    fig.update_layout(title="Interactive Chart", 
+                      xaxis_title="E score", 
+                      yaxis_title="D score", 
+                      # aspectmode='manual',  # Set aspect mode to manual
+                      # aspectratio=dict(x=1, y=1) ) # Set aspect ratio to 1:1 for a square plot
+                      autosize=True,  # Automatically adjust the size based on the container
+                      margin=dict(l=40, r=40, t=40, b=40)  # Add margins for better mobile display
+                      )
     return fig
 
 
@@ -203,6 +218,6 @@ app.layout = html.Div([
 ])
 
 
-# # Run the app
-# if __name__ == '__main__':
-#     app.run_server(debug=True)
+# Run the app
+if __name__ == '__main__':
+    app.run_server(debug=True)
