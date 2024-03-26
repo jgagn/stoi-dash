@@ -47,11 +47,62 @@ with open(file_path, 'rb') as f:
 
 print("Database loaded successfully.")
 #%%  Create Dash app
-
+app = dash.Dash(__name__)
 #%% 3 Tabs infrastructure
 
-app = dash.Dash(__name__)
 
+#%% Tab 1: Competition Overview
+tab1_layout = html.Div([
+    html.H3('Competition Overview'),
+    dcc.Graph(
+        id='graph-1',
+        figure={
+            'data': [
+                {'x': [1, 2, 3], 'y': [4, 1, 2], 'type': 'bar', 'name': 'SF'},
+                {'x': [1, 2, 3], 'y': [2, 4, 5], 'type': 'bar', 'name': 'Montreal'},
+            ],
+            'layout': {
+                'title': 'Graph 1'
+            }
+        }
+    )
+])
+
+#%% Tab 2: Individual Athlete Analysis
+tab2_layout = html.Div([
+    html.H3('Individual Athlete Analysis'),
+    dcc.Graph(
+        id='graph-2',
+        figure={
+            'data': [
+                {'x': [1, 2, 3], 'y': [1, 4, 1], 'type': 'line', 'name': 'SF'},
+                {'x': [1, 2, 3], 'y': [3, 2, 5], 'type': 'line', 'name': 'Montreal'},
+            ],
+            'layout': {
+                'title': 'Graph 2'
+            }
+        }
+    )
+])
+
+#%% Team Scenarios
+tab3_layout = html.Div([
+    html.H3('Team Scenarios'),
+    dcc.Graph(
+        id='graph-3',
+        figure={
+            'data': [
+                {'x': [1, 2, 3], 'y': [2, 3, 5], 'type': 'scatter', 'name': 'SF'},
+                {'x': [1, 2, 3], 'y': [4, 1, 3], 'type': 'scatter', 'name': 'Montreal'},
+            ],
+            'layout': {
+                'title': 'Graph 3'
+            }
+        }
+    )
+])
+
+#%% Combining 3 Tabs
 app.layout = html.Div([
     dcc.Tabs(id='tabs-example', value='tab-1', children=[
         dcc.Tab(label='Tab 1', value='tab-1'),
@@ -61,61 +112,20 @@ app.layout = html.Div([
     html.Div(id='tabs-content')
 ])
 
+#%%
 @app.callback(Output('tabs-content', 'children'),
               [Input('tabs-example', 'value')])
 def render_content(tab):
     if tab == 'tab-1':
-        return html.Div([
-            html.H3('Tab 1 content'),
-            dcc.Graph(
-                id='graph-1',
-                figure={
-                    'data': [
-                        {'x': [1, 2, 3], 'y': [4, 1, 2], 'type': 'bar', 'name': 'SF'},
-                        {'x': [1, 2, 3], 'y': [2, 4, 5], 'type': 'bar', 'name': 'Montreal'},
-                    ],
-                    'layout': {
-                        'title': 'Graph 1'
-                    }
-                }
-            )
-        ])
+        return tab1_layout
     elif tab == 'tab-2':
-        return html.Div([
-            html.H3('Tab 2 content'),
-            dcc.Graph(
-                id='graph-2',
-                figure={
-                    'data': [
-                        {'x': [1, 2, 3], 'y': [1, 4, 1], 'type': 'line', 'name': 'SF'},
-                        {'x': [1, 2, 3], 'y': [3, 2, 5], 'type': 'line', 'name': 'Montreal'},
-                    ],
-                    'layout': {
-                        'title': 'Graph 2'
-                    }
-                }
-            )
-        ])
+        return tab2_layout
     elif tab == 'tab-3':
-        return html.Div([
-            html.H3('Tab 3 content'),
-            dcc.Graph(
-                id='graph-3',
-                figure={
-                    'data': [
-                        {'x': [1, 2, 3], 'y': [2, 3, 5], 'type': 'scatter', 'name': 'SF'},
-                        {'x': [1, 2, 3], 'y': [4, 1, 3], 'type': 'scatter', 'name': 'Montreal'},
-                    ],
-                    'layout': {
-                        'title': 'Graph 3'
-                    }
-                }
-            )
-        ])
+        return tab3_layout
 
+#%%
 if __name__ == '__main__':
     app.run_server(debug=True)
-
 
 
 
