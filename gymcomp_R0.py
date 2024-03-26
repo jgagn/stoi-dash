@@ -95,7 +95,7 @@ def update_bubble_plot(day, apparatus):
                     data['name'].append(name)
                     data['score'].append(stats['Score'])
                     
-                    #make it zero if its nan
+                    # Make it zero if it's nan
                     if math.isnan(stats['Score']):
                         size = 0.0
                         color = 0.0
@@ -105,10 +105,9 @@ def update_bubble_plot(day, apparatus):
                         
                     data['color'].append(get_color(color ** exp, max_score ** exp))
                         
-                        
                     size_exp = 1.5
                     if apparatus == "AA":
-                        data['size'].append((size/ 6) ** size_exp)
+                        data['size'].append((size / 6) ** size_exp)
                     else:
                         data['size'].append(size ** size_exp)
     return data
@@ -116,17 +115,22 @@ def update_bubble_plot(day, apparatus):
 # Define layout of the app
 overview_layout = html.Div([
     html.H3('Competition Overview'),
-    dcc.Dropdown(
-        id='day-dropdown',
-        options=[{'label': day, 'value': day} for day in next(iter(database.values())).keys()],
-        value=list(next(iter(database.values())).keys())[0]
-    ),
-    dcc.Dropdown(
-        id='apparatus-dropdown',
-        options=[{'label': app, 'value': app} for app in ["FX", "PH", "SR", "VT", "PB", "HB", "AA"]],
-        value='AA'
-    ),
-    dcc.Graph(id='bubble-plot')
+    html.Div([
+        dcc.Dropdown(
+            id='day-dropdown',
+            options=[{'label': day, 'value': day} for day in next(iter(database.values())).keys()],
+            value=list(next(iter(database.values())).keys())[0]
+        ),
+        dcc.Dropdown(
+            id='apparatus-dropdown',
+            options=[{'label': app, 'value': app} for app in ["FX", "PH", "SR", "VT", "PB", "HB", "AA"]],
+            value='AA'
+        )
+    ]),
+    html.Div([
+        dcc.Graph(id='bubble-plot'),
+        html.Table(id='ranked-table')
+    ])
 ])
 
 # Define callback to update the bubble plot based on selected options
@@ -135,7 +139,6 @@ overview_layout = html.Div([
     [Input('day-dropdown', 'value'),
      Input('apparatus-dropdown', 'value')]
 )
-
 def update_plot(day, apparatus):
     data = update_bubble_plot(day, apparatus)
     fig = px.scatter(data, x='x', y='y', color='color', size='size', hover_name='name',
@@ -149,16 +152,11 @@ def update_plot(day, apparatus):
     fig.update_traces(text=data['score'], textposition='top center')  # Show score as text on top of the bubbles
     
     # Customize hover template
-    
     hover_template = ("<b>%{hovertext}</b><br>" +
                       "D score: %{y:.3f}<br>" +
                       "E score: %{x:.3f}<br>" +
                       "Score: %{text:.3f}")
-    
     fig.update_traces(hovertemplate=hover_template)
-    
-    # Update color bar legend
-    # fig.update_coloraxes(colorbar_title="Score")
     
     # Update color bar legend
     fig.update_coloraxes(colorbar_title="Score")
@@ -171,8 +169,45 @@ def update_plot(day, apparatus):
     # Update color bar tick labels
     fig.update_coloraxes(colorbar_tickvals=color_values, colorbar_ticktext=[f"{score:.3f}" for score in score_values])
     
-    
     return fig
+
+# Define callback to update the table based on selected options
+@app.callback(
+    Output('ranked-table', 'children'),
+    [Input('day-dropdown', 'value'),
+     Input('apparatus-dropdown', 'value')]
+)
+def update_table(day, apparatus):
+    # Filter the database based on selected day and apparatus
+    # Filter the database based on selected day and apparatus
+    filtered_data = {name: stats for name, values in database.items() if day in values for app, stats in values[day].items() if app == apparatus}
+    
+    # Create DataFrame from filtered data
+    df = pd.DataFrame.from_dict(filtered_data, orient='index')
+    
+    # Sort DataFrame by Score in descending order
+    df = df.sort_values(by='Score', ascending=False)
+    
+    # Reset index to include Athlete name as a column
+    df = df.reset_index().rename(columns={'index': 'Athlete name'})
+    
+    # Truncate score values to 3 decimal points (do not round)
+    df['D score'] = df['D'].map('{:.3f}'.format)
+    df['E score'] = df['E'].map('{:.3f}'.format)
+    df['Score'] = df['Score'].map('{:.3f}'.format)
+    
+    # Reorder columns
+    df = df[['Athlete name', 'D score', 'E score', 'Score']]
+    
+    # Generate HTML table
+    table = html.Table(
+        # Header
+        [html.Tr([html.Th(col) for col in df.columns])] +
+        # Body
+        [html.Tr([html.Td(df.iloc[i][col]) for col in df.columns]) for i in range(len(df))]
+    )
+    
+    return table
 
 ########################################
 #%% Tab 2: Individual Athlete Analysis #
