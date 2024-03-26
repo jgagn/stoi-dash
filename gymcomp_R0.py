@@ -151,26 +151,31 @@ def update_table(day, apparatus, selected_athlete=None):
     return table
 
 
+#I want to make the drop down selectors take up less width
+dropdown_style = {'width': '30%'}  # Adjust the width as needed
+
 # Define layout of the app
 overview_layout = html.Div([
     html.H3('Competition Overview'),
     dbc.Row([
-        dbc.Col(
+        dbc.Col([
+            html.Div("Competition Day:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
             dcc.Dropdown(
                 id='day-dropdown',
                 options=[{'label': day, 'value': day} for day in next(iter(database.values())).keys()],
-                value=list(next(iter(database.values())).keys())[0]
+                value=list(next(iter(database.values())).keys())[0],
+                style=dropdown_style
             ),
-            width=6
-        ),
-        dbc.Col(
+        ], width=6),
+        dbc.Col([
+            html.Div("Apparatus:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
             dcc.Dropdown(
                 id='apparatus-dropdown',
                 options=[{'label': app, 'value': app} for app in ["FX", "PH", "SR", "VT", "PB", "HB", "AA"]],
-                value='AA'
+                value='AA',
+                style=dropdown_style
             ),
-            width=6
-        )
+        ], width=6)
     ]),
     dbc.Row([
         dbc.Col(
@@ -183,6 +188,7 @@ overview_layout = html.Div([
         )
     ])
 ])
+
 
 # Define callback to update the bubble plot and table based on selected options
 # Define callback to update the bubble plot and table based on selected options
@@ -202,7 +208,10 @@ def update_plot_and_table(day, apparatus, clickData):
                       xaxis_title="E score", 
                       yaxis_title="D score", 
                       autosize=True,
-                      margin=dict(l=40, r=40, t=40, b=40))
+                      margin=dict(l=40, r=40, t=40, b=40),
+                      width=1000, #play with this value until you like it
+                      height=600,
+                      )
     fig.update_traces(text=data['score'], textposition='top center')  
 
     # Customize hover template
