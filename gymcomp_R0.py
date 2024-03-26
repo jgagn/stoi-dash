@@ -120,8 +120,8 @@ def update_table(day, apparatus, selected_athlete=None):
     # Create DataFrame from filtered data
     df = pd.DataFrame.from_dict(filtered_data, orient='index')
     
-    # Sort DataFrame by Score in descending order
-    df = df.sort_values(by='Score', ascending=False)
+    # Sort DataFrame by Score in descending order (if tie, sort by E score for now)
+    df = df.sort_values(by=['Score', 'E'], ascending=[False, False])
     
     # Reset index to include Athlete name as a column
     df = df.reset_index().rename(columns={'index': 'Athlete name'})
@@ -131,14 +131,18 @@ def update_table(day, apparatus, selected_athlete=None):
     df['E score'] = df['E'].map('{:.3f}'.format)
     df['Score'] = df['Score'].map('{:.3f}'.format)
     
+    # Add rank column
+    df['Rank'] = df.index + 1
+    
     # Reorder columns
-    df = df[['Athlete name', 'D score', 'E score', 'Score']]
+    df = df[['Rank', 'Athlete name', 'D score', 'E score', 'Score']]
     
     # Generate HTML table with highlighted row if a selected athlete is provided
     table_rows = []
     for i in range(len(df)):
         row_data = df.iloc[i]
-        table_row = html.Tr([html.Td(row_data[col], style={'background-color': 'yellow' if row_data['Athlete name'] == selected_athlete else 'white'}) for col in df.columns])
+        background_color = 'yellow' if row_data['Athlete name'] == selected_athlete else 'white'
+        table_row = html.Tr([html.Td(row_data[col], style={'background-color': background_color}) for col in df.columns])
         table_rows.append(table_row)
     
     table = html.Table(
@@ -149,6 +153,7 @@ def update_table(day, apparatus, selected_athlete=None):
     )
     
     return table
+
 
 
 #I want to make the drop down selectors take up less width
