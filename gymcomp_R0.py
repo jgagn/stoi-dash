@@ -22,6 +22,7 @@ Created on Tue Mar 26 13:38:51 2024
 import dash
 from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output
+import dash_bootstrap_components as dbc
 import pandas as pd
 import numpy as np
 import math
@@ -112,73 +113,7 @@ def update_bubble_plot(day, apparatus):
                         data['size'].append(size ** size_exp)
     return data
 
-# Define layout of the app
-overview_layout = html.Div([
-    html.H3('Competition Overview'),
-    html.Div([
-        dcc.Dropdown(
-            id='day-dropdown',
-            options=[{'label': day, 'value': day} for day in next(iter(database.values())).keys()],
-            value=list(next(iter(database.values())).keys())[0]
-        ),
-        dcc.Dropdown(
-            id='apparatus-dropdown',
-            options=[{'label': app, 'value': app} for app in ["FX", "PH", "SR", "VT", "PB", "HB", "AA"]],
-            value='AA'
-        )
-    ]),
-    html.Div([
-        dcc.Graph(id='bubble-plot'),
-        html.Table(id='ranked-table')
-    ])
-])
-
-# Define callback to update the bubble plot based on selected options
-@app.callback(
-    Output('bubble-plot', 'figure'),
-    [Input('day-dropdown', 'value'),
-     Input('apparatus-dropdown', 'value')]
-)
-def update_plot(day, apparatus):
-    data = update_bubble_plot(day, apparatus)
-    fig = px.scatter(data, x='x', y='y', color='color', size='size', hover_name='name',
-                     color_continuous_scale='Viridis', opacity=0.6, hover_data={'name': True, 'x': False, 'y': False, 'size': False})
-    fig.update_layout(title="Interactive Chart", 
-                      xaxis_title="E score", 
-                      yaxis_title="D score", 
-                      autosize=True,  # Automatically adjust the size based on the container
-                      margin=dict(l=40, r=40, t=40, b=40)  # Add margins for better mobile display
-                      )
-    fig.update_traces(text=data['score'], textposition='top center')  # Show score as text on top of the bubbles
-    
-    # Customize hover template
-    hover_template = ("<b>%{hovertext}</b><br>" +
-                      "D score: %{y:.3f}<br>" +
-                      "E score: %{x:.3f}<br>" +
-                      "Score: %{text:.3f}")
-    fig.update_traces(hovertemplate=hover_template)
-    
-    # Update color bar legend
-    fig.update_coloraxes(colorbar_title="Score")
-    
-    # Map color values to score values for color bar tick labels
-    color_values = np.linspace(0, 1, 11)  # Example color values
-    max_score = max(data['score'])
-    score_values = [value * max_score for value in color_values]  # Map color values to score values
-    
-    # Update color bar tick labels
-    fig.update_coloraxes(colorbar_tickvals=color_values, colorbar_ticktext=[f"{score:.3f}" for score in score_values])
-    
-    return fig
-
-# Define callback to update the table based on selected options
-@app.callback(
-    Output('ranked-table', 'children'),
-    [Input('day-dropdown', 'value'),
-     Input('apparatus-dropdown', 'value')]
-)
-def update_table(day, apparatus):
-    # Filter the database based on selected day and apparatus
+def update_table(day, apparatus, selected_athlete=None):
     # Filter the database based on selected day and apparatus
     filtered_data = {name: stats for name, values in database.items() if day in values for app, stats in values[day].items() if app == apparatus}
     
@@ -199,15 +134,104 @@ def update_table(day, apparatus):
     # Reorder columns
     df = df[['Athlete name', 'D score', 'E score', 'Score']]
     
-    # Generate HTML table
+    # Generate HTML table with highlighted row if a selected athlete is provided
+    table_rows = []
+    for i in range(len(df)):
+        row_data = df.iloc[i]
+        table_row = html.Tr([html.Td(row_data[col], style={'background-color': 'yellow' if row_data['Athlete name'] == selected_athlete else 'white'}) for col in df.columns])
+        table_rows.append(table_row)
+    
     table = html.Table(
         # Header
         [html.Tr([html.Th(col) for col in df.columns])] +
         # Body
-        [html.Tr([html.Td(df.iloc[i][col]) for col in df.columns]) for i in range(len(df))]
+        table_rows
     )
     
     return table
+
+
+# Define layout of the app
+overview_layout = html.Div([
+    html.H3('Competition Overview'),
+    dbc.Row([
+        dbc.Col(
+            dcc.Dropdown(
+                id='day-dropdown',
+                options=[{'label': day, 'value': day} for day in next(iter(database.values())).keys()],
+                value=list(next(iter(database.values())).keys())[0]
+            ),
+            width=6
+        ),
+        dbc.Col(
+            dcc.Dropdown(
+                id='apparatus-dropdown',
+                options=[{'label': app, 'value': app} for app in ["FX", "PH", "SR", "VT", "PB", "HB", "AA"]],
+                value='AA'
+            ),
+            width=6
+        )
+    ]),
+    dbc.Row([
+        dbc.Col(
+            dcc.Graph(id='bubble-plot'),
+            width=6
+        ),
+        dbc.Col(
+            html.Div(id='table-container'),
+            width=6
+        )
+    ])
+])
+
+# Define callback to update the bubble plot and table based on selected options
+# Define callback to update the bubble plot and table based on selected options
+@app.callback(
+    [Output('bubble-plot', 'figure'),
+     Output('table-container', 'children')],
+    [Input('day-dropdown', 'value'),
+     Input('apparatus-dropdown', 'value'),
+     Input('bubble-plot', 'clickData')]  # Add clickData as input
+)
+def update_plot_and_table(day, apparatus, clickData):
+    # Update bubble plot
+    data = update_bubble_plot(day, apparatus)
+    fig = px.scatter(data, x='x', y='y', color='color', size='size', hover_name='name',
+                     color_continuous_scale='Viridis', opacity=0.6, hover_data={'name': True, 'x': False, 'y': False, 'size': False})
+    fig.update_layout(title="Interactive Chart", 
+                      xaxis_title="E score", 
+                      yaxis_title="D score", 
+                      autosize=True,
+                      margin=dict(l=40, r=40, t=40, b=40))
+    fig.update_traces(text=data['score'], textposition='top center')  
+
+    # Customize hover template
+    hover_template = ("<b>%{hovertext}</b><br>" +
+                      "D score: %{y:.3f}<br>" +
+                      "E score: %{x:.3f}<br>" +
+                      "Score: %{text:.3f}")
+    fig.update_traces(hovertemplate=hover_template)
+    
+    # Update color bar legend
+    fig.update_coloraxes(colorbar_title="Score")
+    
+    # Map color values to score values for color bar tick labels
+    color_values = np.linspace(0, 1, 11)  
+    max_score = max(data['score'])
+    score_values = [value * max_score for value in color_values]  
+    
+    # Update color bar tick labels
+    fig.update_coloraxes(colorbar_tickvals=color_values, colorbar_ticktext=[f"{score:.3f}" for score in score_values])
+    
+    # If a point is clicked, highlight the corresponding row in the table
+    if clickData:
+        selected_athlete = clickData['points'][0]['hovertext']
+        table = update_table(day, apparatus, selected_athlete)
+    else:
+        table = update_table(day, apparatus)
+    
+    return fig, table
+
 
 ########################################
 #%% Tab 2: Individual Athlete Analysis #
