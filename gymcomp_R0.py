@@ -115,6 +115,7 @@ def update_bubble_plot(day, apparatus):
 
 # Define layout of the app
 overview_layout = html.Div([
+    html.H3('Competition Overview'),
     dcc.Dropdown(
         id='day-dropdown',
         options=[{'label': day, 'value': day} for day in next(iter(database.values())).keys()],
@@ -212,9 +213,9 @@ tab3_layout = html.Div([
 #%% Combining 3 Tabs
 app.layout = html.Div([
     dcc.Tabs(id='tabs-example', value='tab-1', children=[
-        dcc.Tab(label='Tab 1', value='tab-1'),
-        dcc.Tab(label='Tab 2', value='tab-2'),
-        dcc.Tab(label='Tab 3', value='tab-3'),
+        dcc.Tab(label='Competition Overview', value='tab-1'),
+        dcc.Tab(label='Individual Athlete Analysis', value='tab-2'),
+        dcc.Tab(label='Team Scenarios', value='tab-3'),
     ]),
     html.Div(id='tabs-content')
 ])
