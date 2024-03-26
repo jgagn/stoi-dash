@@ -156,6 +156,21 @@ def update_plot(day, apparatus):
     
     fig.update_traces(hovertemplate=hover_template)
     
+    # Update color bar legend
+    # fig.update_coloraxes(colorbar_title="Score")
+    
+    # Update color bar legend
+    fig.update_coloraxes(colorbar_title="Score")
+    
+    # Map color values to score values for color bar tick labels
+    color_values = np.linspace(0, 1, 11)  # Example color values
+    max_score = max(data['score'])
+    score_values = [value * max_score for value in color_values]  # Map color values to score values
+    
+    # Update color bar tick labels
+    fig.update_coloraxes(colorbar_tickvals=color_values, colorbar_ticktext=[f"{score:.3f}" for score in score_values])
+    
+    
     return fig
 
 ########################################
