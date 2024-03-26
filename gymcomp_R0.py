@@ -46,29 +46,112 @@ with open(file_path, 'rb') as f:
     database = pickle.load(f)
 
 print("Database loaded successfully.")
-#%%  Create Dash app
-app = dash.Dash(__name__)
-#%% 3 Tabs infrastructure
 
+#%%  Function to calculate the color based on the score
+def get_color(score, max_score):
+    if math.isnan(score):
+        return 'black'  # or any other default color
+    else:
+        # Calculate the color based on the score and max score
+        color_value = score / max_score
+        return color_value
 
-#%% Tab 1: Competition Overview
-tab1_layout = html.Div([
-    html.H3('Competition Overview'),
-    dcc.Graph(
-        id='graph-1',
-        figure={
-            'data': [
-                {'x': [1, 2, 3], 'y': [4, 1, 2], 'type': 'bar', 'name': 'SF'},
-                {'x': [1, 2, 3], 'y': [2, 4, 5], 'type': 'bar', 'name': 'Montreal'},
-            ],
-            'layout': {
-                'title': 'Graph 1'
-            }
-        }
-    )
+#%% 
+app = dash.Dash(__name__, suppress_callback_exceptions=True)
+
+###################################
+#%% Tab 1: Competition Overview ###
+###################################
+# Function to calculate the color based on the score
+def get_color(score, max_score):
+    if math.isnan(score):
+        return 'black'  # or any other default color
+    else:
+        # Calculate the color based on the score and max score
+        color_value = score / max_score
+        return color_value
+
+# Function to update the bubble plot
+def update_bubble_plot(day, apparatus):
+    data = {'x': [], 'y': [], 'size': [], 'name': [], 'score': [], 'color': []}
+    max_score = max([stats['Score'] for values in database.values() if day in values for app, stats in values[day].items() if app == apparatus])
+
+    exp = 3  # Adjust this as needed
+
+    for name, values in database.items():
+        if day in values:
+            for app, stats in values[day].items():
+                if app == apparatus:
+                    if stats['E'] == 0.0:
+                        data['x'].append(np.nan)
+                    else:
+                        data['x'].append(stats['E'])
+
+                    if stats['D'] == 0.0:
+                        data['y'].append(np.nan)
+                    else:
+                        data['y'].append(stats['D'])
+
+                    data['name'].append(name)
+                    data['score'].append(stats['Score'])
+                    
+                    #make it zero if its nan
+                    if math.isnan(stats['Score']):
+                        size = 0.0
+                        color = 0.0
+                    else:
+                        size = stats['Score']
+                        color = stats['Score']
+                        
+                    data['color'].append(get_color(color ** exp, max_score ** exp))
+                        
+                        
+                    size_exp = 1.5
+                    if apparatus == "AA":
+                        data['size'].append((size/ 6) ** size_exp)
+                    else:
+                        data['size'].append(size ** size_exp)
+                    
+    return data
+
+# Define layout of the app
+overview_layout = html.Div([
+    dcc.Dropdown(
+        id='day-dropdown',
+        options=[{'label': day, 'value': day} for day in next(iter(database.values())).keys()],
+        value=list(next(iter(database.values())).keys())[0]
+    ),
+    dcc.Dropdown(
+        id='apparatus-dropdown',
+        options=[{'label': app, 'value': app} for app in ["FX", "PH", "SR", "VT", "PB", "HB", "AA"]],
+        value='AA'
+    ),
+    dcc.Graph(id='bubble-plot')
 ])
 
-#%% Tab 2: Individual Athlete Analysis
+# Define callback to update the bubble plot based on selected options
+@app.callback(
+    Output('bubble-plot', 'figure'),
+    [Input('day-dropdown', 'value'),
+     Input('apparatus-dropdown', 'value')]
+)
+def update_plot(day, apparatus):
+    data = update_bubble_plot(day, apparatus)
+    fig = px.scatter(data, x='x', y='y', color='color', size='size', hover_name='name', text='name', 
+                     color_continuous_scale='Viridis', opacity=0.6)
+    fig.update_layout(title="Interactive Chart", 
+                      xaxis_title="E score", 
+                      yaxis_title="D score", 
+                      # aspectmode='manual',  # Set aspect mode to manual
+                      # aspectratio=dict(x=1, y=1) ) # Set aspect ratio to 1:1 for a square plot
+                      autosize=True,  # Automatically adjust the size based on the container
+                      margin=dict(l=40, r=40, t=40, b=40)  # Add margins for better mobile display
+                      )
+    return fig
+
+########################################
+#%% Tab 2: Individual Athlete Analysis #
+########################################
 tab2_layout = html.Div([
     html.H3('Individual Athlete Analysis'),
     dcc.Graph(
@@ -117,7 +200,7 @@ app.layout = html.Div([
               [Input('tabs-example', 'value')])
 def render_content(tab):
     if tab == 'tab-1':
-        return tab1_layout
+        return overview_layout
     elif tab == 'tab-2':
         return tab2_layout
     elif tab == 'tab-3':
