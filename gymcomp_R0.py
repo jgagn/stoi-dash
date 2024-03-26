@@ -111,7 +111,6 @@ def update_bubble_plot(day, apparatus):
                         data['size'].append((size/ 6) ** size_exp)
                     else:
                         data['size'].append(size ** size_exp)
-                    
     return data
 
 # Define layout of the app
@@ -135,18 +134,28 @@ overview_layout = html.Div([
     [Input('day-dropdown', 'value'),
      Input('apparatus-dropdown', 'value')]
 )
+
 def update_plot(day, apparatus):
     data = update_bubble_plot(day, apparatus)
-    fig = px.scatter(data, x='x', y='y', color='color', size='size', hover_name='name', text='name', 
-                     color_continuous_scale='Viridis', opacity=0.6)
+    fig = px.scatter(data, x='x', y='y', color='color', size='size', hover_name='name',
+                     color_continuous_scale='Viridis', opacity=0.6, hover_data={'name': True, 'x': False, 'y': False, 'size': False})
     fig.update_layout(title="Interactive Chart", 
                       xaxis_title="E score", 
                       yaxis_title="D score", 
-                      # aspectmode='manual',  # Set aspect mode to manual
-                      # aspectratio=dict(x=1, y=1) ) # Set aspect ratio to 1:1 for a square plot
                       autosize=True,  # Automatically adjust the size based on the container
                       margin=dict(l=40, r=40, t=40, b=40)  # Add margins for better mobile display
                       )
+    fig.update_traces(text=data['score'], textposition='top center')  # Show score as text on top of the bubbles
+    
+    # Customize hover template
+    
+    hover_template = ("<b>%{hovertext}</b><br>" +
+                      "D score: %{y:.3f}<br>" +
+                      "E score: %{x:.3f}<br>" +
+                      "Score: %{text:.3f}")
+    
+    fig.update_traces(hovertemplate=hover_template)
+    
     return fig
 
 ########################################
