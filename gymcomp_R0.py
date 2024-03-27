@@ -251,6 +251,31 @@ def update_plot_and_table(day, apparatus, clickData):
 #%% Tab 2: Individual Athlete Analysis #
 ########################################
 
+#colour dictionary
+barplot_colours = {'D':
+                       {'day1':'blue',
+                       'day2':'green',
+                       'average':'orange',
+                       'best':'magenta',
+                        },
+                   'E':
+                       {'day1':'#ADD8E6',
+                       'day2':'#90EE90',
+                       'average':'#FFD700',
+                       'best':'#FFB6C1',
+                        },
+                     }
+def barplot_width(n):
+    if n == 1:
+        width = 0.4
+    elif n ==2:
+        width = 0.3
+    elif n == 3:
+        width = 0.225
+    elif n==4:
+        width = 0.175
+    return width
+
 # Define layout for the second tab with dropdowns and bar graph
 tab2_layout = html.Div([
     html.H3('Individual Athlete Analysis'),
@@ -285,6 +310,13 @@ def update_score_graph(selected_athlete, selected_days):
     # Define an offset multiplier for each day
     offset_multiplier = 0
     
+    #width and offset will be based on number of days selected
+    n_days = len(selected_days)
+    print(f"n_days: {n_days}")
+    
+    print(f"width: {barplot_width(n_days)}")
+    width = barplot_width(n_days)
+    
     for day in selected_days:
         athlete = database[selected_athlete]
         d_scores = []
@@ -294,7 +326,9 @@ def update_score_graph(selected_athlete, selected_days):
         for app in plot_apparatus:
             d_scores.append(athlete[day][app]['D'])
             e_scores.append(athlete[day][app]['E'])
-            max_score = max(max_score, max(athlete[day][app]['D'], athlete[day][app]['E']))
+            max_score = 16 #max(max_score, max(athlete[day][app]['Score'])) #+athlete[day][app]['E'])) #, athlete[day][app]['E']))
+        
+        # print(barplot_colours['D'][day])
         
         # Create stacked bar trace for D and E scores
         stacked_trace_d = go.Bar(
@@ -302,39 +336,51 @@ def update_score_graph(selected_athlete, selected_days):
             y=d_scores,
             name=f'{day} - D',
             hoverinfo='y+name',
-            marker_color='blue',  # Set color for D scores
+            
+            marker_color=barplot_colours['D'][day],  # Set color for D scores
             offsetgroup=day,  # Group by day
-            legendgroup=day  # Group by day
+            legendgroup=day,  # Group by day
+            width = width,
         )
+        
         
         stacked_trace_e = go.Bar(
             x=[i + offset_multiplier for i in range(len(plot_apparatus))],  # Adjust x-location based on offset_multiplier
             y=e_scores,
             name=f'{day} - E',
             hoverinfo='y+name',
-            marker_color='green',  # Set color for E scores
+            marker_color=barplot_colours['E'][day],  # Set color for E scores
             offsetgroup=day,  # Group by day
             legendgroup=day,  # Group by day
-            base=d_scores  # Offset by D scores
+            base=d_scores,  # Offset by D scores
+            width = width,
         )
         
         traces.append(stacked_trace_d)
         traces.append(stacked_trace_e)
         
         # Increment the offset multiplier for the next day
-        offset_multiplier += 0.4  # Adjust the multiplier as needed to prevent overlapping bars
-
+        offset_multiplier += width # Adjust the multiplier as needed to prevent overlapping bars
+        
     layout = go.Layout(
-        title=f'Score Breakdown for {selected_athlete}',
-        xaxis={'title': 'Apparatus'},
-        yaxis={'title': 'Score', 'range': [0, max_score * 1.1]},  # Set range for y-axis
-        width=1000,
-        height=600
+    title=f'Score Breakdown for {selected_athlete}',
+    xaxis={'title': 'Apparatus'},
+    yaxis={'title': 'Apparatus', 'range': [0, max_score * 1.1]},
+    barmode='relative',  # Relative bars for stacked and grouped
+    width=1000,
+    height=600
     )
+
+    # Set y-axis tick labels to be the apparatus names
+    layout['yaxis'].update({'tickvals': list(range(len(plot_apparatus))),
+                            'ticktext': plot_apparatus})
 
     return {'data': traces, 'layout': layout}
 
-#%% Team Scenarios
+######################
+#%% Team Scenarios ###
+######################
+
 tab3_layout = html.Div([
     html.H3('Team Scenarios'),
     dcc.Graph(
