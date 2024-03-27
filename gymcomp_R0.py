@@ -272,8 +272,6 @@ tab2_layout = html.Div([
     ]),
     dcc.Graph(id='score-graph', style={'width': '1000px', 'height': '600px'})
 ])
-
-# Define callback to update the bar graph based on selected athlete and days
 @app.callback(
     Output('score-graph', 'figure'),
     [Input('athlete-dropdown', 'value'),
@@ -284,26 +282,45 @@ def update_score_graph(selected_athlete, selected_days):
 
     for day in selected_days:
         athlete = database[selected_athlete]
-        scores = []
+        d_scores = []
+        e_scores = []
         plot_apparatus = ['FX','PH','SR','VT','PB','HB']
-        # print(f"day: {day}")
-        [scores.append(athlete[day][x]['Score']) for x in plot_apparatus]
         
-        #debug:
-        # print(f"scores: {scores}")
+        for app in plot_apparatus:
+            d_scores.append(athlete[day][app]['D'])
+            e_scores.append(athlete[day][app]['E'])
         
-        trace = go.Bar(
+        # Create stacked bar trace for D and E scores
+        stacked_trace = go.Bar(
             x=plot_apparatus,
-            y=scores,
-            name=day
+            y=d_scores,
+            name=f'{day} - D',
+            hoverinfo='y+name',
+            marker_color='blue',  # Set color for D scores
+            base=0  # Base value for D scores
         )
-        traces.append(trace)
+        
+        # Add E scores on top of D scores
+        for i in range(len(e_scores)):
+            e_scores[i] += d_scores[i]
+        
+        stacked_trace_e = go.Bar(
+            x=plot_apparatus,
+            y=e_scores,
+            name=f'{day} - E',
+            hoverinfo='y+name',
+            marker_color='green',  # Set color for E scores
+            base=d_scores  # Base value for E scores (stack on top of D scores)
+        )
+        
+        traces.append(stacked_trace)
+        traces.append(stacked_trace_e)
 
     layout = go.Layout(
         title=f'Score Breakdown for {selected_athlete}',
         xaxis={'title': 'Apparatus'},
         yaxis={'title': 'Score'},
-        barmode='group',
+        barmode='group',  # Grouped bars
         width=1000,
         height=600
     )
