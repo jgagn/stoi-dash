@@ -273,7 +273,6 @@ tab2_layout = html.Div([
     dcc.Graph(id='score-graph', style={'width': '1000px', 'height': '600px'})
 ])
 
-# Define callback to update the bar graph based on selected athlete and days
 @app.callback(
     Output('score-graph', 'figure'),
     [Input('athlete-dropdown', 'value'),
@@ -282,6 +281,9 @@ tab2_layout = html.Div([
 def update_score_graph(selected_athlete, selected_days):
     traces = []
     max_score = 0
+    
+    # Define an offset multiplier for each day
+    offset_multiplier = 0
     
     for day in selected_days:
         athlete = database[selected_athlete]
@@ -296,7 +298,7 @@ def update_score_graph(selected_athlete, selected_days):
         
         # Create stacked bar trace for D and E scores
         stacked_trace_d = go.Bar(
-            x=plot_apparatus,
+            x=[i + offset_multiplier for i in range(len(plot_apparatus))],  # Adjust x-location based on offset_multiplier
             y=d_scores,
             name=f'{day} - D',
             hoverinfo='y+name',
@@ -306,7 +308,7 @@ def update_score_graph(selected_athlete, selected_days):
         )
         
         stacked_trace_e = go.Bar(
-            x=plot_apparatus,
+            x=[i + offset_multiplier for i in range(len(plot_apparatus))],  # Adjust x-location based on offset_multiplier
             y=e_scores,
             name=f'{day} - E',
             hoverinfo='y+name',
@@ -318,17 +320,20 @@ def update_score_graph(selected_athlete, selected_days):
         
         traces.append(stacked_trace_d)
         traces.append(stacked_trace_e)
+        
+        # Increment the offset multiplier for the next day
+        offset_multiplier += 0.4  # Adjust the multiplier as needed to prevent overlapping bars
 
     layout = go.Layout(
         title=f'Score Breakdown for {selected_athlete}',
         xaxis={'title': 'Apparatus'},
         yaxis={'title': 'Score', 'range': [0, max_score * 1.1]},  # Set range for y-axis
-        barmode='relative',  # Relative bars for stacked and grouped
         width=1000,
         height=600
     )
 
     return {'data': traces, 'layout': layout}
+
 #%% Team Scenarios
 tab3_layout = html.Div([
     html.H3('Team Scenarios'),
