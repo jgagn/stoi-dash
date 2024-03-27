@@ -274,6 +274,8 @@ def barplot_width(n):
         width = 0.225
     elif n==4:
         width = 0.175
+    else:
+        width=0.0
     return width
 
 # Define layout for the second tab with dropdowns and bar graph
@@ -307,8 +309,7 @@ def update_score_graph(selected_athlete, selected_days):
     traces = []
     max_score = 0
     
-    # Define an offset multiplier for each day
-    offset_multiplier = 0
+    
     
     #width and offset will be based on number of days selected
     n_days = len(selected_days)
@@ -316,6 +317,10 @@ def update_score_graph(selected_athlete, selected_days):
     
     print(f"width: {barplot_width(n_days)}")
     width = barplot_width(n_days)
+    
+    # Define an offset multiplier for each day
+    #starting with negative offset so we are always around zero
+    offset_multiplier = -width*(n_days-1)/2
     
     for day in selected_days:
         athlete = database[selected_athlete]
@@ -365,16 +370,16 @@ def update_score_graph(selected_athlete, selected_days):
     layout = go.Layout(
     title=f'Score Breakdown for {selected_athlete}',
     xaxis={'title': 'Apparatus'},
-    yaxis={'title': 'Apparatus', 'range': [0, max_score * 1.1]},
+    yaxis={'title': 'Score', 'range': [0, max_score * 1.1]},
     barmode='relative',  # Relative bars for stacked and grouped
     width=1000,
     height=600
     )
 
-    # Set y-axis tick labels to be the apparatus names
-    layout['yaxis'].update({'tickvals': list(range(len(plot_apparatus))),
-                            'ticktext': plot_apparatus})
-
+    # Set x-axis tick labels to be the apparatus names
+    layout['xaxis']['tickvals'] = list(range(len(plot_apparatus)))
+    layout['xaxis']['ticktext'] = plot_apparatus
+    # print(f"plot app: {plot_apparatus}")
     return {'data': traces, 'layout': layout}
 
 ######################
