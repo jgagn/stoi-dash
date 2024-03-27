@@ -46,7 +46,7 @@ file_path = os.path.join(base_dir, "test_data/EliteCanada2024/jrdatabase")
 with open(file_path, 'rb') as f:
     database = pickle.load(f)
 
-print("Database loaded successfully.")
+# print("Database loaded successfully.")
 
 #%%  Function to calculate the color based on the score
 def get_color(score, max_score):
@@ -58,7 +58,7 @@ def get_color(score, max_score):
         return color_value
 
 #%% 
-app = dash.Dash(__name__, suppress_callback_exceptions=True)
+app = dash.Dash(__name__, suppress_callback_exceptions=True) #, external_stylesheets=[dbc.themes.MORPH])
 
 ###################################
 #%% Tab 1: Competition Overview ###
@@ -250,21 +250,65 @@ def update_plot_and_table(day, apparatus, clickData):
 ########################################
 #%% Tab 2: Individual Athlete Analysis #
 ########################################
+
+# Define layout for the second tab with dropdowns and bar graph
 tab2_layout = html.Div([
     html.H3('Individual Athlete Analysis'),
-    dcc.Graph(
-        id='graph-2',
-        figure={
-            'data': [
-                {'x': [1, 2, 3], 'y': [1, 4, 1], 'type': 'line', 'name': 'SF'},
-                {'x': [1, 2, 3], 'y': [3, 2, 5], 'type': 'line', 'name': 'Montreal'},
-            ],
-            'layout': {
-                'title': 'Graph 2'
-            }
-        }
-    )
+    html.Div([
+        dcc.Dropdown(
+            id='athlete-dropdown',
+            options=[{'label': athlete, 'value': athlete} for athlete in database.keys()],
+            value=next(iter(database)),  # Default value
+            multi=False,  # Single select
+            style={'width': '50%'}
+        ),
+        dcc.Dropdown(
+            id='day-dropdown',
+            options=[{'label': day, 'value': day} for day in database[next(iter(database))].keys()],
+            value=['day1','day2'],  # Default value
+            multi=True,  # Allow multi-select
+            style={'width': '50%'}
+        )
+    ]),
+    dcc.Graph(id='score-graph', style={'width': '1000px', 'height': '600px'})
 ])
+
+# Define callback to update the bar graph based on selected athlete and days
+@app.callback(
+    Output('score-graph', 'figure'),
+    [Input('athlete-dropdown', 'value'),
+     Input('day-dropdown', 'value')]
+)
+def update_score_graph(selected_athlete, selected_days):
+    traces = []
+
+    for day in selected_days:
+        athlete = database[selected_athlete]
+        scores = []
+        plot_apparatus = ['FX','PH','SR','VT','PB','HB']
+        # print(f"day: {day}")
+        [scores.append(athlete[day][x]['Score']) for x in plot_apparatus]
+        
+        #debug:
+        # print(f"scores: {scores}")
+        
+        trace = go.Bar(
+            x=plot_apparatus,
+            y=scores,
+            name=day
+        )
+        traces.append(trace)
+
+    layout = go.Layout(
+        title=f'Score Breakdown for {selected_athlete}',
+        xaxis={'title': 'Apparatus'},
+        yaxis={'title': 'Score'},
+        barmode='group',
+        width=1000,
+        height=600
+    )
+
+    return {'data': traces, 'layout': layout}
 
 #%% Team Scenarios
 tab3_layout = html.Div([
