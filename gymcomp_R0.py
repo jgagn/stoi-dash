@@ -390,20 +390,48 @@ def update_score_graph(selected_athlete, selected_days):
 ######################
 
 tab3_layout = html.Div([
-    html.H3('Team Scenarios'),
-    dcc.Graph(
-        id='graph-3',
-        figure={
-            'data': [
-                {'x': [1, 2, 3], 'y': [2, 3, 5], 'type': 'scatter', 'name': 'SF'},
-                {'x': [1, 2, 3], 'y': [4, 1, 3], 'type': 'scatter', 'name': 'Montreal'},
-            ],
-            'layout': {
-                'title': 'Graph 3'
-            }
-        }
-    )
+    html.Label('Results:'),
+    dcc.Dropdown(
+        id='results-dropdown',
+        options=[
+            {'label': 'Day 1', 'value': 'day1'},
+            {'label': 'Day 2', 'value': 'day2'},
+            {'label': 'Average', 'value': 'average'},
+            {'label': 'Best', 'value': 'best'}
+        ],
+        value='day1',
+        style={'width': '200px'}  # Adjust width here
+    ),
+
+    html.Label('Competition Format:'),
+    html.Div([
+        dcc.Input(id='xx-input', type='number', min=1, max=15, value=5, style={'width': '50px', 'fontSize': '16px'}),
+        html.Label('-', style={'padding': '0 5px'}),  # Added label with padding
+        dcc.Input(id='yy-input', type='number', min=1, max=6, value=4, style={'width': '50px',  'fontSize': '16px'}),
+        html.Label('-', style={'padding': '0 5px'}),  # Added label with padding
+        dcc.Input(id='zz-input', type='number', min=1, max=5, value=3, style={'width': '50px', 'fontSize': '16px'}),
+    ]),
+    
+    html.Label('Show Top', style={'margin-top': '10px'}),  # Added label for the top X team scenarios
+    dcc.Input(id='top-x-input', type='number', min=1, max=20, value=5, style={'width': '50px', 'fontSize': '16px'}),  # Added input box for X
+    html.Label('team scenarios', style={'margin-left': '5px', 'margin-top': '10px'}),  # Added label for team scenario
+    
+    
+    html.Button('Calculate', id='calculate-button', n_clicks=0, style={'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'green', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'}),
+
+    # Placeholder for tables that will be updated based on filters
+    html.Div(id='output-tables')
 ])
+
+# Callback to update tables when the "Calculate" button is clicked
+@app.callback(
+    Output('output-tables', 'children'),
+    [Input('calculate-button', 'n_clicks')],
+)
+def update_tables(n_clicks):
+    # Add your calculation logic here and return the updated tables
+    # For now, just return a placeholder
+    return html.Div("Tables will be updated here.")
 
 #%% Combining 3 Tabs
 app.layout = html.Div([
