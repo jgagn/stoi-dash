@@ -21,7 +21,7 @@ Created on Tue Mar 26 13:38:51 2024
 
 import dash
 from dash import dcc, html, dash_table
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 import pandas as pd
 import numpy as np
@@ -389,6 +389,28 @@ def update_score_graph(selected_athlete, selected_days):
 #%% Team Scenarios ###
 ######################
 
+# Sample data for demonstration
+team_scores = [
+    {'Athlete': 'VANOUNOU Liam', 'FX': 12.475, 'PH': 12.025, 'SR': 12.125, 'VT': 12.900500000000001, 'PB': 12.45, 'HB': 11.8, 'Total': 73.7755},
+    {'Athlete': 'GONZALEZ Aiden', 'FX': 12.725, 'PH': 11.625, 'SR': 11.8, 'VT': 12.466999999999999, 'PB': 11.274999999999999, 'HB': 12.925, 'Total': 72.81700000000001},
+    {'Athlete': 'HUBER Evan', 'FX': 12.725, 'PH': 10.4, 'SR': 12.4, 'VT': 13.767, 'PB': 12.425, 'HB': 12.075, 'Total': 73.792},
+    {'Athlete': 'MADORE Raphael', 'FX': 13.075, 'PH': 10.1, 'SR': 12.524999999999999, 'VT': 13.9505, 'PB': 12.625, 'HB': 11.875, 'Total': 74.1505},
+    {'Athlete': 'CARROLL Jordan', 'FX': 0.0, 'PH': 13.625, 'SR': 0.0, 'VT': 0.0, 'PB': 0.0, 'HB': 0.0, 'Total': 13.625},
+    {'Athlete': 'Team', 'FX': 38.525, 'PH': 37.275, 'SR': 37.05, 'VT': 40.618, 'PB': 37.5, 'HB': 36.875, 'Total': 227.843}
+]
+
+
+# Header for the table
+header = ['Athlete', 'FX', 'PH', 'SR', 'VT', 'PB', 'HB', 'Total']
+
+def generate_table(data):
+    return dash_table.DataTable(
+        columns=[{'name': i, 'id': i} for i in header],
+        data=data,
+        style_cell={'textAlign': 'center', 'whiteSpace': 'normal', 'height': 'auto'},  # Ensure text wraps within cells
+        style_table={'overflowX': 'auto'},  # Enable horizontal scroll if content overflows
+    )
+
 tab3_layout = html.Div([
     html.Label('Results:'),
     dcc.Dropdown(
@@ -420,18 +442,37 @@ tab3_layout = html.Div([
     html.Button('Calculate', id='calculate-button', n_clicks=0, style={'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'green', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'}),
 
     # Placeholder for tables that will be updated based on filters
-    html.Div(id='output-tables')
+    html.Div(id='tables-container')
 ])
 
-# Callback to update tables when the "Calculate" button is clicked
+# # Callback to generate tables based on the selected number of team scenarios
+# @app.callback(
+#     Output('tables-container', 'children'),
+#     [Input('calculate-button', 'n_clicks')],
+#     [Input('top-x-input', 'value')]  # Add input for the number of team scenarios
+# )
+# def generate_tables(n_clicks, num_scenarios):
+#     tables = []
+#     for i in range(num_scenarios):
+#         table_data = team_scores  # For now, using the same data for all tables
+#         table = generate_table(table_data)
+#         tables.append(html.Div([html.H3(f'Team Scenario {i+1}'), table]))  # Add a heading for each table
+#     return tables
+
+# Callback to generate tables when the "Calculate" button is clicked
 @app.callback(
-    Output('output-tables', 'children'),
+    Output('tables-container', 'children'),
     [Input('calculate-button', 'n_clicks')],
+    [State('top-x-input', 'value')]  # Add state for the number of team scenarios
 )
-def update_tables(n_clicks):
-    # Add your calculation logic here and return the updated tables
-    # For now, just return a placeholder
-    return html.Div("Tables will be updated here.")
+def generate_tables(n_clicks, num_scenarios):
+    tables = []
+    if n_clicks:
+        for i in range(num_scenarios):
+            table_data = team_scores  # For now, using the same data for all tables
+            table = generate_table(table_data)
+            tables.append(html.Div([html.H3(f'Team Scenario {i+1}'), table]))  # Add a heading for each table
+    return tables
 
 #%% Combining 3 Tabs
 app.layout = html.Div([
