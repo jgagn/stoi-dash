@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Mar 13 14:44:49 2024
+Created on Sun Mar 24 13:36:23 2024
 
 @author: joelgagnon
 """
+
 
 import dash
 from dash import dcc, html, dash_table
@@ -289,38 +290,131 @@ def update_result_dropdown(selected_athlete):
     return [{'label': day, 'value': day} for day in database[selected_athlete].keys()]
 
 # Define callback to update graph based on selected options
+#line graph
+
+# @app.callback(
+#     Output('individual-graph', 'figure'),
+#     [Input('athlete-dropdown', 'value'),
+#       Input('result-dropdown', 'value'),
+#       Input('y-axis-dropdown', 'value')]
+#     )
+
+
+# def update_graph(selected_athlete, selected_results, y_axis):
+#     if selected_athlete is None or selected_results is None:
+#         # If no athlete or result selected, return an empty graph
+#         return {'data': [], 'layout': {'title': 'Select athlete and results to display'}}
+
+#     traces = []
+#     for result in selected_results:
+#         x_values = [key for key in database[selected_athlete][result].keys() if key != "AA"]
+#         y_values = [database[selected_athlete][result][x][y_axis] for x in x_values]
+#         # Filter out zeros
+#         x_values = [x if x != 0.0 else np.nan for x in x_values]
+#         y_values = [y if y != 0.0 else np.nan for y in y_values]
+
+#         trace = go.Scatter(x=x_values, y=y_values, mode='lines+markers', name=result)
+#         traces.append(trace)
+
+#     layout = go.Layout(
+#         title=f'{selected_athlete} - {", ".join(selected_results)} ({y_axis})',
+#         xaxis=dict(title='Apparatus'),
+#         yaxis=dict(title=y_axis),
+#         legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
+#     )
+
+#     return {'data': traces, 'layout': layout}
+
+#bar graph
+
+Modify the update_graph callback function
 @app.callback(
     Output('individual-graph', 'figure'),
     [Input('athlete-dropdown', 'value'),
       Input('result-dropdown', 'value'),
       Input('y-axis-dropdown', 'value')]
-    )
-
+)
 def update_graph(selected_athlete, selected_results, y_axis):
-    if selected_athlete is None or selected_results is None:
-        # If no athlete or result selected, return an empty graph
-        return {'data': [], 'layout': {'title': 'Select athlete and results to display'}}
+    if selected_athlete is None:
+        # If no athlete selected, return an empty graph
+        return {'data': [], 'layout': {'title': 'Select an athlete to display results'}}
 
-    traces = []
+    if selected_results is None:
+        # If no specific results selected, use day1 and day2 as initial results
+        selected_results = ['day1', 'day2']
+
+    data = []
     for result in selected_results:
         x_values = [key for key in database[selected_athlete][result].keys() if key != "AA"]
         y_values = [database[selected_athlete][result][x][y_axis] for x in x_values]
+        
         # Filter out zeros
         x_values = [x if x != 0.0 else np.nan for x in x_values]
         y_values = [y if y != 0.0 else np.nan for y in y_values]
-
-        trace = go.Scatter(x=x_values, y=y_values, mode='lines+markers', name=result)
-        traces.append(trace)
+        
+        # Create a bar trace
+        trace = go.Bar(x=x_values, y=y_values, name=result)
+        data.append(trace)
 
     layout = go.Layout(
         title=f'{selected_athlete} - {", ".join(selected_results)} ({y_axis})',
         xaxis=dict(title='Apparatus'),
         yaxis=dict(title=y_axis),
-        legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
+        barmode='group'  # Display bars grouped
     )
 
-    return {'data': traces, 'layout': layout}
+    return {'data': data, 'layout': layout}
 
+#try stacking - didnt work
+
+# @app.callback(
+#     Output('individual-graph', 'figure'),
+#     [Input('athlete-dropdown', 'value'),
+#      Input('result-dropdown', 'value'),
+#      Input('y-axis-dropdown', 'value')]
+# )
+
+# def update_graph(selected_athlete, selected_results, y_axis):
+#     if selected_athlete is None or selected_results is None:
+#         # If no athlete or result selected, return an empty graph
+#         return {'data': [], 'layout': {'title': 'Select athlete and results to display'}}
+
+#     if y_axis == 'Summary':
+#         # For 'Summary', calculate the sum of D and E scores to create stacked bars
+#         data = []
+#         for result in selected_results:
+#             d_values = [database[selected_athlete][result][x]['D'] for x in database[selected_athlete][result]]
+#             e_values = [database[selected_athlete][result][x]['E'] for x in database[selected_athlete][result]]
+#             total_values = np.array(d_values) + np.array(e_values)
+
+#             trace_d = go.Bar(x=list(database[selected_athlete][result].keys()), y=d_values, name='D Score')
+#             trace_e = go.Bar(x=list(database[selected_athlete][result].keys()), y=e_values, name='E Score')
+#             trace_total = go.Bar(x=list(database[selected_athlete][result].keys()), y=total_values, name='Total Score')
+
+#             data.extend([trace_d, trace_e, trace_total])
+
+#         layout = go.Layout(
+#             title=f'{selected_athlete} - {", ".join(selected_results)} (Summary)',
+#             xaxis=dict(title='Apparatus'),
+#             yaxis=dict(title='Score'),
+#             barmode='stack'  # Stack bars for D and E scores
+#         )
+#     else:
+#         # For other options, create individual bars
+#         data = []
+#         for result in selected_results:
+#             y_values = [database[selected_athlete][result][x][y_axis] for x in database[selected_athlete][result]]
+#             trace = go.Bar(x=list(database[selected_athlete][result].keys()), y=y_values, name=result)
+#             data.append(trace)
+
+#         layout = go.Layout(
+#             title=f'{selected_athlete} - {", ".join(selected_results)} ({y_axis})',
+#             xaxis=dict(title='Apparatus'),
+#             yaxis=dict(title=y_axis),
+#             barmode='group'  # Display bars grouped
+#         )
+
+#     return {'data': data, 'layout': layout}
 #%% Assemble all tabs into app
 
 #blank first tab (placeholder)

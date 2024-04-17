@@ -313,9 +313,9 @@ def update_score_graph(selected_athlete, selected_days):
     
     #width and offset will be based on number of days selected
     n_days = len(selected_days)
-    print(f"n_days: {n_days}")
+    # print(f"n_days: {n_days}")
     
-    print(f"width: {barplot_width(n_days)}")
+    # print(f"width: {barplot_width(n_days)}")
     width = barplot_width(n_days)
     
     # Define an offset multiplier for each day
@@ -343,6 +343,9 @@ def update_score_graph(selected_athlete, selected_days):
             hoverinfo='y+name',
             
             marker_color=barplot_colours['D'][day],  # Set color for D scores
+            # marker_pattern='cross',
+            # marker=dict(pattern='+', pattern_fgcolor='black'),
+            # marker_pattern_fgcolor=barplot_colours['E'][day],
             offsetgroup=day,  # Group by day
             legendgroup=day,  # Group by day
             width = width,
