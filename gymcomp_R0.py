@@ -440,38 +440,55 @@ tab3_layout = html.Div([
     
     
     html.Button('Calculate', id='calculate-button', n_clicks=0, style={'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'green', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'}),
-
+    
+    # html.Button('Calculate', id='calculate-button', n_clicks=0, style={
+    #     'display': 'block',
+    #     'margin-top': '10px',
+    #     'width': '150px',
+    #     'height': '40px',
+    #     'background-color': 'green',
+    #     'color': 'white',
+    #     'border': 'none',
+    #     'border-radius': '5px',
+    #     'fontSize': '20px',
+    #     'box-shadow': '2px 2px 5px rgba(0, 0, 0, 0.2)',  # Add box shadow effect
+    # }),
+    
     # Placeholder for tables that will be updated based on filters
     html.Div(id='tables-container')
 ])
-
-# # Callback to generate tables based on the selected number of team scenarios
-# @app.callback(
-#     Output('tables-container', 'children'),
-#     [Input('calculate-button', 'n_clicks')],
-#     [Input('top-x-input', 'value')]  # Add input for the number of team scenarios
-# )
-# def generate_tables(n_clicks, num_scenarios):
-#     tables = []
-#     for i in range(num_scenarios):
-#         table_data = team_scores  # For now, using the same data for all tables
-#         table = generate_table(table_data)
-#         tables.append(html.Div([html.H3(f'Team Scenario {i+1}'), table]))  # Add a heading for each table
-#     return tables
 
 # Callback to generate tables when the "Calculate" button is clicked
 @app.callback(
     Output('tables-container', 'children'),
     [Input('calculate-button', 'n_clicks')],
-    [State('top-x-input', 'value')]  # Add state for the number of team scenarios
-)
-def generate_tables(n_clicks, num_scenarios):
+    [State('results-dropdown', 'value'),
+     State('xx-input', 'value'),
+     State('yy-input', 'value'),
+     State('zz-input', 'value'),
+     State('top-x-input', 'value')]
+    )
+
+def generate_tables(n_clicks, results_value, xx_value, yy_value, zz_value, num_scenarios):
+
     tables = []
     if n_clicks:
         for i in range(num_scenarios):
+            results_value = dash.callback_context.states['results-dropdown.value']
+            xx_value = dash.callback_context.states['xx-input.value']
+            yy_value = dash.callback_context.states['yy-input.value']
+            zz_value = dash.callback_context.states['zz-input.value']
+            
             table_data = team_scores  # For now, using the same data for all tables
+            
+            # Truncate all numerical values to three decimal places
+            for row in table_data:
+                for key, value in row.items():
+                    if isinstance(value, (int, float)):
+                        row[key] = "{:.3f}".format(value)
+            
             table = generate_table(table_data)
-            tables.append(html.Div([html.H3(f'Team Scenario {i+1}'), table]))  # Add a heading for each table
+            tables.append(html.Div([html.H3(f'Team Scenario {i+1} using {results_value} results and {xx_value}-{yy_value}-{zz_value} competition format: {table_data[-1]["Total"]}'), table]))  # Add a heading for each table
     return tables
 
 #%% Combining 3 Tabs
