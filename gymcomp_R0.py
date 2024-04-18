@@ -30,9 +30,13 @@ import plotly.graph_objs as go
 import plotly.express as px
 import pickle
 import os
+import itertools
 
 # Import the print function
 from builtins import print
+
+#import the team scenarios calc
+from team_scenario_calcs import team_score_calcs
 #%% Import Data 
 #use absolute path
 
@@ -390,7 +394,7 @@ def update_score_graph(selected_athlete, selected_days):
 ######################
 
 # Sample data for demonstration
-team_scores = [
+team_score_dummy = [
     {'Athlete': 'VANOUNOU Liam', 'FX': 12.475, 'PH': 12.025, 'SR': 12.125, 'VT': 12.900500000000001, 'PB': 12.45, 'HB': 11.8, 'Total': 73.7755},
     {'Athlete': 'GONZALEZ Aiden', 'FX': 12.725, 'PH': 11.625, 'SR': 11.8, 'VT': 12.466999999999999, 'PB': 11.274999999999999, 'HB': 12.925, 'Total': 72.81700000000001},
     {'Athlete': 'HUBER Evan', 'FX': 12.725, 'PH': 10.4, 'SR': 12.4, 'VT': 13.767, 'PB': 12.425, 'HB': 12.075, 'Total': 73.792},
@@ -401,7 +405,7 @@ team_scores = [
 
 
 # Header for the table
-header = ['Athlete', 'FX', 'PH', 'SR', 'VT', 'PB', 'HB', 'Total']
+header = ['Athlete', 'FX', 'PH', 'SR', 'VT', 'PB', 'HB', 'AA']
 
 def generate_table(data):
     return dash_table.DataTable(
@@ -439,7 +443,22 @@ tab3_layout = html.Div([
     html.Label('team scenarios', style={'margin-left': '5px', 'margin-top': '10px'}),  # Added label for team scenario
     
     
+    # html.Div(id="buttons-container", children=[
+    #     html.Button('Calculate', id='calculate-button', n_clicks=0, style={'display': 'block', 'width': '150px', 'height': '40px', 'background-color': 'green', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'}),
+    #     html.Button('Calculating...', id='loading-button', disabled=True, style={'display': 'none', 'width': '150px', 'height': '40px', 'background-color': 'gray', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'}),
+    # ]),
+    
     html.Button('Calculate', id='calculate-button', n_clicks=0, style={'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'green', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'}),
+    
+    # # Loading button widget
+    # dcc.Loading(
+    #     id="loading-calculate",
+    #     type="default",
+    #     children=[
+    #         html.Button('Calculating...', id='loading-button', disabled=True, style={'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'gray', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'}),
+    #         html.Div(id="loading-output-calculate")
+    #     ]
+    # ),
     
     # html.Button('Calculate', id='calculate-button', n_clicks=0, style={
     #     'display': 'block',
@@ -458,29 +477,133 @@ tab3_layout = html.Div([
     html.Div(id='tables-container')
 ])
 
+# Callback to switch between Calculate and Calculating buttons
+# @app.callback(
+#     Output('calculate-button', 'style'),
+#     Output('loading-button', 'style'),
+#     Input('calculate-button', 'n_clicks'),
+#     prevent_initial_call=True
+# )
+# def toggle_buttons(n_clicks):
+#     if n_clicks % 2 == 1:
+#         return {'display': 'none'}, {'display': 'block'}
+#     else:
+#         return {'display': 'block'}, {'display': 'none'}
+
+# @app.callback(
+#     Output('calculate-button', 'n_clicks'),
+#     Input('calculate-button', 'n_clicks'),
+#     prevent_initial_call=True
+# )
+# def reset_n_clicks(n_clicks):
+#     return 0
+
 # Callback to generate tables when the "Calculate" button is clicked
 @app.callback(
     Output('tables-container', 'children'),
     [Input('calculate-button', 'n_clicks')],
     [State('results-dropdown', 'value'),
-     State('xx-input', 'value'),
-     State('yy-input', 'value'),
-     State('zz-input', 'value'),
-     State('top-x-input', 'value')]
+      State('xx-input', 'value'),
+      State('yy-input', 'value'),
+      State('zz-input', 'value'),
+      State('top-x-input', 'value')]
     )
 
 def generate_tables(n_clicks, results_value, xx_value, yy_value, zz_value, num_scenarios):
 
     tables = []
     if n_clicks:
+        
+        #Here is where we will actually do the team score calculations!
+        
+        results_value = dash.callback_context.states['results-dropdown.value']
+        xx_value = dash.callback_context.states['xx-input.value']
+        yy_value = dash.callback_context.states['yy-input.value']
+        zz_value = dash.callback_context.states['zz-input.value']
+        
+        
+        
+        comp_format = [xx_value,yy_value,zz_value]
+        team_size = xx_value
+        #get names
+        names = []
+        for name in database:
+            names.append(name)
+
+        #Here is where we could add the feature to NOT INCLUDE certain gymnasts
+        # names.remove('CARROLL Jordan')
+        # names.remove('ALLAIRE Dominic')
+        
+        all_combos = list(itertools.combinations(names, team_size))
+
+        #let's try
+        combo_scores = []
+        # start_time = time.monotonic()
+        for combo in all_combos:
+            team_score = team_score_calcs(comp_format,combo,database,results=results_value,print_table=False)
+            combo_scores.append(team_score['Team']['AA'])
+        # end_time = time.monotonic()
+        # time_for_all = timedelta(seconds=end_time - start_time)
+        # print(f"Time for all: {time_for_all}")
+
+        #% Try zipping lists and then sorting to rank
+        combined = list(zip(list(combo_scores), all_combos))
+        #sort it
+        combined.sort(key=lambda x:x[0],reverse=True)
+        #https://stackoverflow.com/questions/20099669/sort-multidimensional-array-based-on-2nd-element-of-the-subarray
+
+        #colour coding if we want (TODO)
+        colour_dict = {"scratch":"red",
+                       "dropped":"black",
+                       "counting":"white"}
+        
         for i in range(num_scenarios):
-            results_value = dash.callback_context.states['results-dropdown.value']
-            xx_value = dash.callback_context.states['xx-input.value']
-            yy_value = dash.callback_context.states['yy-input.value']
-            zz_value = dash.callback_context.states['zz-input.value']
             
-            table_data = team_scores  # For now, using the same data for all tables
+            # team = combined[0][1]
             
+            # new_team_scores = team_score_calcs(comp_format,team,database,print_table=False)
+        
+            #created table 
+            tlas=['FX','PH','SR','VT','PB','HB','AA']
+            team = combined[i][1]
+            team_scores = team_score_calcs(comp_format,team,database,results=results_value,print_table=False)
+            table = []
+            
+            for athlete in team:
+                new_line = {}
+                new_line['Athlete'] = athlete
+                for tla in tlas:
+                    #choose colour based on count 
+                    #new_line.append(team_scores[athlete][tla][0])
+                    #new_line.append(team_scores[athlete][tla][1])
+                    # new_line.append(colored(team_scores[athlete][tla][0],colour_dict[team_scores[athlete][tla][1]]))
+                    
+                    # print('team_scores[athlete][tla]')
+                    # print(team_scores[athlete][tla])
+                    try:
+                        new_line[tla]=team_scores[athlete][tla][0]
+                    except:
+                        new_line[tla]=team_scores[athlete][tla]
+                    # new_line.append(colored(team_scores[athlete][tla][1],colour_dict[team_scores[athlete][tla][1]]))
+                    
+                    # header.append(tla)
+                    # header.append("count")
+                #We also add their AA scores
+                # new_line.append(team_scores[athlete]['AA'])
+                
+                table.append(new_line)
+            #summary line
+            summary_line = {} #["Team"]
+            summary_line['Athlete'] = 'Team Total'
+            for tla in tlas:
+                summary_line[tla] = np.round(team_scores['Team'][tla],3)
+            table.append(summary_line)
+            # print('team scores')
+            # print(team_scores)
+            # print('table')
+            # print(table)
+            table_data = table
+            # table_data = team_score_dummy  # For now, using the same data for all tables
             # Truncate all numerical values to three decimal places
             for row in table_data:
                 for key, value in row.items():
@@ -488,7 +611,11 @@ def generate_tables(n_clicks, results_value, xx_value, yy_value, zz_value, num_s
                         row[key] = "{:.3f}".format(value)
             
             table = generate_table(table_data)
-            tables.append(html.Div([html.H3(f'Team Scenario {i+1} using {results_value} results and {xx_value}-{yy_value}-{zz_value} competition format: {table_data[-1]["Total"]}'), table]))  # Add a heading for each table
+            tables.append(html.Div([html.H3(f'Team Scenario {i+1} using {results_value} results and {xx_value}-{yy_value}-{zz_value} competition format: {table_data[-1]["AA"]}'), table]))  # Add a heading for each table
+            
+            #rest clicks to get calculate button back
+            # reset_n_clicks(n_clicks)
+
     return tables
 
 #%% Combining 3 Tabs

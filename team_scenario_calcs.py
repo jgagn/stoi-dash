@@ -24,9 +24,9 @@ apparatus = ["Floor","Pommel Horse","Rings","Vault","Parallel Bars","High Bar","
 #%% Algorithm to Calculate Team Scores
 
 #I need to add the results to use for the calcs: "day1","day2","average" or "best"
-results = "average"
+# results = "average"
 
-def team_score_calcs(comp_format,team,database,print_table=False):
+def team_score_calcs(comp_format,team,database,results='average',print_table=False):
     if len(team) != comp_format[0]:
         #If given a team, check the format is compatible
         print(f"Error: {len(team)} members given when {comp_format[0]}-{comp_format[1]}-{comp_format[2]} format given!")
