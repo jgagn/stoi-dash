@@ -639,9 +639,9 @@ def render_content(tab):
     elif tab == 'tab-3':
         return tab3_layout
 
-#%%
-if __name__ == '__main__':
-    app.run_server(debug=True)
+#%% comment out when pusing to github
+# if __name__ == '__main__':
+#     app.run_server(debug=True)
 
 
 
