@@ -61,8 +61,10 @@ def get_color(score, max_score):
         color_value = score / max_score
         return color_value
 
-#%% 
+#%% Setup App and Title
 app = dash.Dash(__name__, suppress_callback_exceptions=True) #, external_stylesheets=[dbc.themes.MORPH])
+
+app.title = "STOI Demo"
 
 ###################################
 #%% Tab 1: Competition Overview ###
