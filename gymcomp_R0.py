@@ -32,6 +32,9 @@ import pickle
 import os
 import itertools
 
+#dash authentication
+# import dash_auth # pip install dash-auth==2.0.0. <- add this to requirements.txt
+
 # Import the print function
 from builtins import print
 
@@ -61,11 +64,23 @@ def get_color(score, max_score):
         color_value = score / max_score
         return color_value
 
-#%% Setup App and Title
+#%% Setup App, Title, Authentication
 app = dash.Dash(__name__, suppress_callback_exceptions=True) #, external_stylesheets=[dbc.themes.MORPH])
 
 app.title = "STOI Demo"
 
+# # Keep this out of source code repository - save in a file or a database
+# VALID_USERNAME_PASSWORD_PAIRS = {
+#     'hello3': 'world'
+# }
+
+# #ssecret key for flask
+# app.secret_key = 'mensartisticgymnasticsdemo'  # Set your secret key here
+
+# auth = dash_auth.BasicAuth(
+#     app,
+#     VALID_USERNAME_PASSWORD_PAIRS
+# )
 ###################################
 #%% Tab 1: Competition Overview ###
 ###################################
@@ -642,8 +657,8 @@ def render_content(tab):
         return tab3_layout
 
 #%% comment out when pusing to github
-# if __name__ == '__main__':
-#     app.run_server(debug=True)
+if __name__ == '__main__':
+    app.run_server(debug=True)
 
 
 
