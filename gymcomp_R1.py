@@ -47,7 +47,10 @@ from team_scenario_calcs import team_score_calcs
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Construct the absolute path to the file
-file_path = os.path.join(base_dir, "test_data/EliteCanada2024/jrdatabase")
+#file path and csv file name
+path = "test_data/Combined"
+pkl_file = "gymcanmag"
+file_path = os.path.join(base_dir, path+"/"+pkl_file)
 
 
 with open(file_path, 'rb') as f:
