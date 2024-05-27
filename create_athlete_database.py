@@ -94,15 +94,7 @@ for col in database.columns:
 #apply new column names
 database.columns = new_columns
 
-#%% Organize into athlete specific database
-
-athlete_database = {}
-
-#get all athlete names
-# Extract unique values from the column
-athletes = database['Athlete'].unique()
-
-#need to do a bit of prep work to figure out which categories and competitiond days occured for all competitions
+#%% Do some  prep work to figure out which categories and competitiond days occured for all competitions
 comp_overview={}
 
 #extract unique competitions
@@ -126,10 +118,21 @@ for comp in competitions:
         results = category_df['Results'].unique()
         
         #lets add the category to the comp overview
-        comp_overview[comp][category] = results
+        
+        comp_overview[comp][category] = results 
+        
+        
+        
     
+#%% Organize into athlete specific database
 
-#lets add the comp overivew data to the athlete_database
+athlete_database = {}
+
+#get all athlete names
+# Extract unique values from the column
+athletes = database['Athlete'].unique()
+
+#%%$ lets add the comp overivew data and competition data to the athlete_database
 
 athlete_database['overview'] = comp_overview
 
@@ -202,6 +205,75 @@ for athlete in athletes:
             #they did not compete in this competion
             print(f"{athlete} did not compete at {comp}")
          
+#%% Let's now add some statistical information to the database!
+
+#two values of interest for each competition:
+# 1: average
+# 2: best
+
+# global interest? eventually average of all and best of all... TODO but later
+
+#method: sweep through athletes, competition, and days.
+#do math to get average and best, save that data
+#will only do for score (could be done to get highest D score, E score... not now)
+
+#loop through athlets
+for athlete in athletes:
+    #loop through competitions
+    for comp in comp_overview.keys():
+        #remember that not all athletes compete at all compettions
+        #check to see if there is an entry for that comp
+        if athlete_database[athlete][comp]:
+            # print(f"{athlete} competed at {comp}")
+            # complete statistical analysis for the days they competed
+            # keep in mind they may not have competed on all events on all days
+            
+            athlete_database[athlete][comp]['average'] = {}
+            athlete_database[athlete][comp]['best'] = {}
+            
+            
+            for tla in tlas:
+                #query the dataframe to obtain all data
+                athlete_database[athlete][comp]['average'][tla] = {}
+                athlete_database[athlete][comp]['best'][tla] = {}
+                
+                for value in order+[Ename]:#forgot that I was treating E score differently
+                    #sweep through all days, do not include category keys
+                    results = [key for key in athlete_database[athlete][comp].keys() if key not in ["category","average","best"]]
+                    
+                    vals = []
+                    
+                    for result in results:
+                        print(f"result: {result}")
+                        val = athlete_database[athlete][comp][result][tla][value]
+                        # if it is a zero, make it a nan
+                        if val == 0:
+                            val = np.nan
+                        vals.append(val)
+                    
+                    #Now, let's get the mean and max values and store in new database
+                    #because some values might be nans (if did not compete)
+                    #use nanmean and nanmax so it ignores them
+                    #however, if all vals are nan, then just put nan
+                    print(f"vals: {vals}")
+                    
+                    # Check if all values are NaN
+                    
+                    if np.all(np.isnan(vals)):
+                        athlete_database[athlete][comp]['average'][tla][value] = np.nan
+                        athlete_database[athlete][comp]['best'][tla][value] = np.nan
+                    else:
+                        athlete_database[athlete][comp]['average'][tla][value] = np.nanmean(vals)
+                        athlete_database[athlete][comp]['best'][tla][value] = np.nanmax(vals)
+
+        else:
+            print(f"{athlete} did not compete at {comp}")
+        
+        
+        
+
+
+
         
 
 #%% I want to pickle my database 

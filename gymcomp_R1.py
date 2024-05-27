@@ -354,7 +354,7 @@ def update_results_dropdown(competition, categories, database):
         results_options = []
         for category in categories:
             # Get the available results options from the database dictionary
-            options = database['overview'][competition][category]
+            options = database['overview'][competition][category] 
             results_options.append(options)
         #now, only keep the options that show up for all categories
         # print(f"result_options: {results_options}")
@@ -374,7 +374,7 @@ def update_results_dropdown(competition, categories, database):
         # print(common_elements)
                 
         
-        return [{'label': result, 'value': result} for result in common_elements]
+        return [{'label': result, 'value': result} for result in common_elements + ["average","best"]]
     else:
         return []
 
