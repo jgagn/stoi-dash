@@ -294,7 +294,7 @@ overview_layout = html.Div([
             ),
         ], width=6),
         dbc.Col([
-            html.Div("Category:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
+            html.Div("Category (can select more than 1):", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
             dcc.Dropdown(
                 id='category-dropdown',
                 style=dropdown_style,
