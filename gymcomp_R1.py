@@ -87,7 +87,10 @@ app.title = "STOI Demo"
 
 #%% Helpful functions
 
-def get_category_data_for_competition_day(database, competition, category, results, apparatus):
+def get_category_data_for_competition_day(database, competition, categories, results, apparatus):
+    #Since we made category a multi-select, we need to update how the code works
+    #categories is now a list
+    
     data = {}
     
     for athlete, competitions in database.items():
@@ -98,11 +101,22 @@ def get_category_data_for_competition_day(database, competition, category, resul
             # print(f"competitions: {competitions.keys()}")
             if competition in competitions.keys():
                 # print(f"athlete: {athlete}")
-                
-                if category == database[athlete][competition]['category']:
-                    #need to make sure we have selected results, it might be none
-                    if results != None:
-                        data[athlete] = database[athlete][competition][results][apparatus]
+                #loop through categories if they are selected
+                if categories:
+                    for category in categories:
+                        if category == database[athlete][competition]['category']:
+                            #need to make sure we have selected results, it might be none
+                            if results != None:
+                                try:
+                                    data[athlete] = database[athlete][competition][results][apparatus]
+                                except:
+                                    #There are some scenarios where an athlete only competes day 1 but not day 2 or vice versa
+                                    #also important for finals
+                                    #in those cases, if we cant find the data,do not try to set it as it does not exist
+                            
+                                    print(f"couldn't save {athlete} data for {results}")
+                                    pass
+                                    
     # print(data)
     return data
 
@@ -120,18 +134,19 @@ def get_color(score, max_score):
         return color_value
 
 # Function to update the bubble plot
-def update_bubble_plot(database, competition, category, results, apparatus):
+def update_bubble_plot(database, competition, categories, results, apparatus):
     data = {'x': [], 'y': [], 'size': [], 'name': [], 'score': [], 'color': []}
     
     
     
     #filter the data 
-    bubble_data = get_category_data_for_competition_day(database, competition, category, results, apparatus)
+    bubble_data = get_category_data_for_competition_day(database, competition, categories, results, apparatus)
     
 
     if not bubble_data:
-        print("no bubble plot data")
+        # print("no bubble plot data")
         # table = html.Table()
+        pass
     else:
         # print("we have bubble data!")
         # print(bubble_data)
@@ -144,8 +159,8 @@ def update_bubble_plot(database, competition, category, results, apparatus):
         
         
         for name, stats in bubble_data.items():
-            print(f"name: {name}")
-            print(f"stats: {stats}")
+            # print(f"name: {name}")
+            # print(f"stats: {stats}")
             #I've already filtered the apparatus
             if stats['E'] == 0.0:
                 data['x'].append(np.nan)
@@ -177,15 +192,15 @@ def update_bubble_plot(database, competition, category, results, apparatus):
                 data['size'].append(size ** size_exp)
     return data
 
-def update_table(database, competition, category, results, apparatus, selected_athlete=None):
+def update_table(database, competition, categories, results, apparatus, selected_athlete=None):
     # Filter the database based on selected day and apparatus
     # filtered_data = {name: stats for name, values in database.items() if day in values for app, stats in values[day].items() if app == apparatus}
     
-    table_data = get_category_data_for_competition_day(database, competition, category, results, apparatus)
+    table_data = get_category_data_for_competition_day(database, competition, categories, results, apparatus)
     
     # Ensure that the table_data dictionary is not empty
     if not table_data:
-        print("no table data")
+        # print("no table data")
         table = html.Table()
     else:
         # print("we have table data!")
@@ -260,7 +275,8 @@ overview_layout = html.Div([
             html.Div("Category:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
             dcc.Dropdown(
                 id='category-dropdown',
-                style=dropdown_style
+                style=dropdown_style,
+                multi=True  # Enable multi-select
             ),
         ], width=6),
         dbc.Col([
@@ -288,6 +304,8 @@ overview_layout = html.Div([
             dcc.Graph(id='bubble-plot'),
             width=6
         ),
+        html.H3("Filtered Data Table"),
+        
         dbc.Col(
             html.Div(id='table-container'),
             width=6
@@ -302,15 +320,38 @@ overview_layout = html.Div([
      Input('category-dropdown', 'value')],
     [State('results-store', 'data')]
 )
-def update_results_dropdown(competition, category, database):
+def update_results_dropdown(competition, categories, database):
     # print("Competition:", competition)
-    # print("Category:", category)
+    # print("Categories:", categories)
     # print("Database:", database)
-    if competition and category:
-        # Get the available results options from the database dictionary
-        results_options = database['overview'][competition][category]
+    
+    #category is now a multi-select option
+    #will need to only show the results options that correspond to multi categories
+    if competition and categories:
+        results_options = []
+        for category in categories:
+            # Get the available results options from the database dictionary
+            options = database['overview'][competition][category]
+            results_options.append(options)
+        #now, only keep the options that show up for all categories
+        # print(f"result_options: {results_options}")
         # Create options for the results dropdown
-        return [{'label': result, 'value': result} for result in results_options]
+        
+        def find_common_elements(list_of_lists):
+            # Convert each sublist to a set
+            sets = [set(sublist) for sublist in list_of_lists]
+            
+            # Find the intersection of all sets
+            common_elements = set.intersection(*sets)
+            
+            # Convert the result back to a list
+            return sorted(common_elements)
+        
+        common_elements = find_common_elements(results_options)
+        # print(common_elements)
+                
+        
+        return [{'label': result, 'value': result} for result in common_elements]
     else:
         return []
 
@@ -365,9 +406,10 @@ def set_category_dropdown_value(competition, options):
      Input('competition-dropdown', 'value'),
      Input('bubble-plot', 'clickData')]  # Add clickData as input
 )
-def update_plot_and_table(results, apparatus, category, competition, clickData):
+def update_plot_and_table(results, apparatus, categories, competition, clickData):
     # Update bubble plot
-    data = update_bubble_plot(database, competition, category, results, apparatus)
+    # print(f"plot and table categories: {categories}")
+    data = update_bubble_plot(database, competition, categories, results, apparatus)
     fig = px.scatter(data, x='x', y='y', color='color', size='size', hover_name='name',
                      color_continuous_scale='Viridis', opacity=0.6, hover_data={'name': True, 'x': False, 'y': False, 'size': False})
     fig.update_layout(title="D score vs. E score Interactive Bubble Plot", 
@@ -406,9 +448,9 @@ def update_plot_and_table(results, apparatus, category, competition, clickData):
     # If a point is clicked, highlight the corresponding row in the table
     if clickData:
         selected_athlete = clickData['points'][0]['hovertext']
-        table = update_table(database, competition, category, results, apparatus, selected_athlete)
+        table = update_table(database, competition, categories, results, apparatus, selected_athlete)
     else:
-        table = update_table(database, competition, category, results, apparatus)
+        table = update_table(database, competition, categories, results, apparatus)
     
     return fig, table
 
