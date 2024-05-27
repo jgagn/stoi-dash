@@ -49,7 +49,7 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 # Construct the absolute path to the file
 #file path and csv file name
 path = "test_data/Combined"
-pkl_file = "gymcanmag"
+pkl_file = "gymcan_mag_athletes"
 file_path = os.path.join(base_dir, path+"/"+pkl_file)
 
 
@@ -84,6 +84,29 @@ app.title = "STOI Demo"
 #     app,
 #     VALID_USERNAME_PASSWORD_PAIRS
 # )
+
+#%% Helpful functions
+
+def get_category_data_for_competition_day(database, competition, category, results, apparatus):
+    data = {}
+    
+    for athlete, competitions in database.items():
+        
+        if athlete not in {"overview", "competition_acronyms", "category_acronyms"}:
+            # print(f"athlete: {athlete}")
+            # print(f"competition: {competition}")
+            # print(f"competitions: {competitions.keys()}")
+            if competition in competitions.keys():
+                # print(f"athlete: {athlete}")
+                
+                if category == database[athlete][competition]['category']:
+                    #need to make sure we have selected results, it might be none
+                    if results != None:
+                        data[athlete] = database[athlete][competition][results][apparatus]
+    # print(data)
+    return data
+
+
 ###################################
 #%% Tab 1: Competition Overview ###
 ###################################
@@ -97,26 +120,36 @@ def get_color(score, max_score):
         return color_value
 
 # Function to update the bubble plot
-def update_bubble_plot(day, apparatus):
+def update_bubble_plot(database, competition, category, results, apparatus):
     data = {'x': [], 'y': [], 'size': [], 'name': [], 'score': [], 'color': []}
-    max_score = max([stats['Score'] for values in database.values() if day in values for app, stats in values[day].items() if app == apparatus])
-
+    
+    #TODO change this max score thing likely
+    # max_score = max([stats['Score'] for values in database.values() if day in values for app, stats in values[day].items() if app == apparatus])
+    max_score = 16
     exp = 3  # Adjust this as needed
-
-    for name, values in database.items():
-        if day in values:
-            for app, stats in values[day].items():
+    
+    #filter the data 
+    bubble_data = get_category_data_for_competition_day(database, competition, category, results, apparatus)
+    
+    if not bubble_data:
+        print("no bubble plot data")
+        table = html.Table()
+    else:
+        # print("we have bubble data!")
+    
+        for name, values in bubble_data.items():
+            for app, stats in values.items():
                 if app == apparatus:
                     if stats['E'] == 0.0:
                         data['x'].append(np.nan)
                     else:
                         data['x'].append(stats['E'])
-
+    
                     if stats['D'] == 0.0:
                         data['y'].append(np.nan)
                     else:
                         data['y'].append(stats['D'])
-
+    
                     data['name'].append(name)
                     data['score'].append(stats['Score'])
                     
@@ -137,62 +170,93 @@ def update_bubble_plot(day, apparatus):
                         data['size'].append(size ** size_exp)
     return data
 
-def update_table(day, apparatus, selected_athlete=None):
+def update_table(database, competition, category, results, apparatus, selected_athlete=None):
     # Filter the database based on selected day and apparatus
-    filtered_data = {name: stats for name, values in database.items() if day in values for app, stats in values[day].items() if app == apparatus}
+    # filtered_data = {name: stats for name, values in database.items() if day in values for app, stats in values[day].items() if app == apparatus}
     
-    # Create DataFrame from filtered data
-    df = pd.DataFrame.from_dict(filtered_data, orient='index')
+    table_data = get_category_data_for_competition_day(database, competition, category, results, apparatus)
     
-    # Sort DataFrame by Score in descending order (if tie, sort by E score for now)
-    df = df.sort_values(by=['Score', 'E'], ascending=[False, False])
-    
-    # Reset index to include Athlete name as a column
-    df = df.reset_index().rename(columns={'index': 'Athlete name'})
-    
-    # Truncate score values to 3 decimal points (do not round)
-    df['D score'] = df['D'].map('{:.3f}'.format)
-    df['E score'] = df['E'].map('{:.3f}'.format)
-    df['Score'] = df['Score'].map('{:.3f}'.format)
-    
-    # Add rank column
-    df['Rank'] = df.index + 1
-    
-    # Reorder columns
-    df = df[['Rank', 'Athlete name', 'D score', 'E score', 'Score']]
-    
-    # Generate HTML table with highlighted row if a selected athlete is provided
-    table_rows = []
-    for i in range(len(df)):
-        row_data = df.iloc[i]
-        background_color = 'yellow' if row_data['Athlete name'] == selected_athlete else 'white'
-        table_row = html.Tr([html.Td(row_data[col], style={'background-color': background_color}) for col in df.columns])
-        table_rows.append(table_row)
-    
-    table = html.Table(
-        # Header
-        [html.Tr([html.Th(col) for col in df.columns])] +
-        # Body
-        table_rows
-    )
+    # Ensure that the table_data dictionary is not empty
+    if not table_data:
+        print("no table data")
+        table = html.Table()
+    else:
+        # print("we have table data!")
+        # Flatten the dictionary and convert to DataFrame
+        df = pd.DataFrame.from_dict(table_data, orient='index')
+        
+        # Check if the DataFrame has the expected columns
+        expected_columns = ['Score', 'E']  # Add other expected columns here
+        if not set(expected_columns).issubset(df.columns):
+            return None
+        
+        # Sort DataFrame by Score in descending order (if tie, sort by E score for now)
+        df = df.sort_values(by=['Score', 'E'], ascending=[False, False])
+        
+        # print(f"df: {df}")
+        # Reset index to include Athlete name as a column
+        df = df.reset_index().rename(columns={'index': 'Athlete name'})
+        
+        # Truncate score values to 3 decimal points (do not round)
+        df['D score'] = df['D'].map('{:.3f}'.format)
+        df['E score'] = df['E'].map('{:.3f}'.format)
+        df['Score'] = df['Score'].map('{:.3f}'.format)
+        
+        # Add rank column
+        df['Rank'] = df.index + 1
+        
+        # Reorder columns
+        df = df[['Rank', 'Athlete name', 'D score', 'E score', 'Score']]
+        
+        # Generate HTML table with highlighted row if a selected athlete is provided
+        table_rows = []
+        for i in range(len(df)):
+            row_data = df.iloc[i]
+            background_color = 'yellow' if row_data['Athlete name'] == selected_athlete else 'white'
+            table_row = html.Tr([html.Td(row_data[col], style={'background-color': background_color}) for col in df.columns])
+            table_rows.append(table_row)
+        
+        table = html.Table(
+            # Header
+            [html.Tr([html.Th(col) for col in df.columns])] +
+            # Body
+            table_rows
+        )
     
     return table
 
 
 
 #I want to make the drop down selectors take up less width
-dropdown_style = {'width': '30%'}  # Adjust the width as needed
+dropdown_style = {'width': '50%'}  # Adjust the width as needed
 
 # Define layout of the app
+
+#I might want to make Cateogry, and other drop downs, multi-select
+
 overview_layout = html.Div([
     html.H3('Competition Overview'),
     dbc.Row([
         dbc.Col([
-            html.Div("Competition Day:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
+            html.Div("Competition", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
             dcc.Dropdown(
-                id='day-dropdown',
-                options=[{'label': day, 'value': day} for day in next(iter(database.values())).keys()],
+                id='competition-dropdown',
+                options=[{'label': database['competition_acronyms'][comp], 'value': comp} for comp in database['overview'].keys()],
                 value=list(next(iter(database.values())).keys())[0],
+                style=dropdown_style
+            ),
+        ], width=6),
+        dbc.Col([
+            html.Div("Category:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
+            dcc.Dropdown(
+                id='category-dropdown',
+                style=dropdown_style
+            ),
+        ], width=6),
+        dbc.Col([
+            html.Div("Results:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
+            dcc.Dropdown(
+                id='results-dropdown',
                 style=dropdown_style
             ),
         ], width=6),
@@ -206,6 +270,9 @@ overview_layout = html.Div([
             ),
         ], width=6)
     ]),
+    dcc.Store(id='results-store', data=database),  # Store the database - needed to dynamically change data in dropdown menus
+    
+    
     dbc.Row([
         dbc.Col(
             dcc.Graph(id='bubble-plot'),
@@ -218,19 +285,79 @@ overview_layout = html.Div([
     ])
 ])
 
+# Define callback to update the options of the results dropdown based on the selected competition and category
+@app.callback(
+    Output('results-dropdown', 'options'),
+    [Input('competition-dropdown', 'value'),
+     Input('category-dropdown', 'value')],
+    [State('results-store', 'data')]
+)
+def update_results_dropdown(competition, category, database):
+    # print("Competition:", competition)
+    # print("Category:", category)
+    # print("Database:", database)
+    if competition and category:
+        # Get the available results options from the database dictionary
+        results_options = database['overview'][competition][category]
+        # Create options for the results dropdown
+        return [{'label': result, 'value': result} for result in results_options]
+    else:
+        return []
+
+# Define callback to set the value of the results dropdown to the first option when the competition or category changes
+@app.callback(
+    Output('results-dropdown', 'value'),
+    [Input('competition-dropdown', 'value'),
+     Input('category-dropdown', 'value')],
+    [State('results-dropdown', 'options')]
+)
+def set_results_dropdown_value(competition, category, options):
+    if options:
+        return options[0]['value']
+    else:
+        return None
+
+# Define callback to update the options of the category dropdown based on the selected competition
+@app.callback(
+    Output('category-dropdown', 'options'),
+    [Input('competition-dropdown', 'value')],
+    [State('results-store', 'data')]
+)
+def update_category_dropdown(competition, database):
+    if competition:
+        category_options = database['overview'][competition].keys()
+        # Create options for the results dropdown
+        return [{'label': database['category_acronyms'][category], 'value': category} for category in category_options]
+    else:
+        return []
+
+# Define callback to set the value of the category dropdown to the first option when the competition changes
+@app.callback(
+    Output('category-dropdown', 'value'),
+    [Input('competition-dropdown', 'value')],
+    [State('category-dropdown', 'options')]
+)
+def set_category_dropdown_value(competition, options):
+    if options:
+        return options[0]['value']
+    else:
+        return None
+
 
 # Define callback to update the bubble plot and table based on selected options
-# Define callback to update the bubble plot and table based on selected options
+
 @app.callback(
     [Output('bubble-plot', 'figure'),
      Output('table-container', 'children')],
-    [Input('day-dropdown', 'value'),
+    [Input('results-dropdown', 'value'),
      Input('apparatus-dropdown', 'value'),
+     Input('category-dropdown', 'value'),
+     Input('competition-dropdown', 'value'),
      Input('bubble-plot', 'clickData')]  # Add clickData as input
 )
-def update_plot_and_table(day, apparatus, clickData):
+def update_plot_and_table(results, apparatus, category, competition, clickData):
     # Update bubble plot
-    data = update_bubble_plot(day, apparatus)
+    data = update_bubble_plot(database, competition, category, results, apparatus)
     fig = px.scatter(data, x='x', y='y', color='color', size='size', hover_name='name',
                      color_continuous_scale='Viridis', opacity=0.6, hover_data={'name': True, 'x': False, 'y': False, 'size': False})
     fig.update_layout(title="Interactive Chart", 
@@ -255,7 +382,9 @@ def update_plot_and_table(day, apparatus, clickData):
     
     # Map color values to score values for color bar tick labels
     color_values = np.linspace(0, 1, 11)  
-    max_score = max(data['score'])
+    #TODO fix max score
+    # max_score = max(data['score'])
+    max_score = 16
     score_values = [value * max_score for value in color_values]  
     
     # Update color bar tick labels
@@ -264,9 +393,9 @@ def update_plot_and_table(day, apparatus, clickData):
     # If a point is clicked, highlight the corresponding row in the table
     if clickData:
         selected_athlete = clickData['points'][0]['hovertext']
-        table = update_table(day, apparatus, selected_athlete)
+        table = update_table(database, competition, category, results, apparatus, selected_athlete)
     else:
-        table = update_table(day, apparatus)
+        table = update_table(database, competition, category, results, apparatus)
     
     return fig, table
 
@@ -660,8 +789,8 @@ def render_content(tab):
         return tab3_layout
 
 #%% comment out when pusing to github
-# if __name__ == '__main__':
-#     app.run_server(debug=True)
+if __name__ == '__main__':
+    app.run_server(debug=True)
 
 
 

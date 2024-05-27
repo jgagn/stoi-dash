@@ -36,25 +36,39 @@ database = pd.read_csv(path+"/"+csv_file, encoding=encoding)
 
 # print(database.head())
 
+#%% Acronyms
+
+competition_acronyms = {"EC2024": "Elite Canada 2024",
+                 "CC2023": "Canadian Championships 2023",
+                 "CC2024": "Canadian Championships 2024"
+                    }
+
+category_acronyms = {"SR21":"Senior (21+)",
+                     "SRNG": "Senior (NextGen)",
+                     "JR17": "Junior (17-18)",
+                     "JR15": "Junior (15-16)",
+                     "Aspire": "Aspire",
+                     }
+
 #%% Rename column headers
 # the format is a bit silly, where there are two levels of headers
 # the key is that the data goes D score, Score and Rank
 order = ["D","Score","Rk"]
 Ename = "E"
-apparatus = ["Floor","Pommel Horse","Rings","Vault","Parallel Bars","High Bar","AllAround"]
+# apparatus = ["Floor","Pommel Horse","Rings","Vault","Parallel Bars","High Bar","AllAround"]
 
 #create a dictionary where the csv appartus names are keys to desired apparatus abbreviation values
 #two-letter acronyms we want to use
 tlas = ["FX","PH","SR","VT","PB","HB","AA"]
 
-abbrev_dict = {apparatus[0]:tlas[0],
-               apparatus[1]:tlas[1],
-               apparatus[2]:tlas[2],
-               apparatus[3]:tlas[3],
-               apparatus[4]:tlas[4],
-               apparatus[5]:tlas[5],
-               apparatus[6]:tlas[6],
-               }
+# abbrev_dict = {apparatus[0]:tlas[0],
+#                apparatus[1]:tlas[1],
+#                apparatus[2]:tlas[2],
+#                apparatus[3]:tlas[3],
+#                apparatus[4]:tlas[4],
+#                apparatus[5]:tlas[5],
+#                apparatus[6]:tlas[6],
+#                }
 new_columns = []
 i = 0
 for col in database.columns:
@@ -114,6 +128,14 @@ for comp in competitions:
         #lets add the category to the comp overview
         comp_overview[comp][category] = results
     
+
+#lets add the comp overivew data to the athlete_database
+
+athlete_database['overview'] = comp_overview
+
+#add acronym data here
+athlete_database['competition_acronyms'] = competition_acronyms
+athlete_database['category_acronyms'] = category_acronyms
 
 for athlete in athletes:
     #create an dictionary entry for the athlete in the athlete_database
