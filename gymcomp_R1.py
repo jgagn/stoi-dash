@@ -40,6 +40,9 @@ from builtins import print
 
 #import the team scenarios calc
 from team_scenario_calcs import team_score_calcs
+
+#ordered dict
+from collections import OrderedDict
 #%% Import Data 
 #use absolute path
 
@@ -109,12 +112,16 @@ def get_category_data_for_competition_day(database, competition, categories, res
                             if results != None:
                                 try:
                                     data[athlete] = database[athlete][competition][results][apparatus]
+                                    #I also want to add the category of the athlete into the data
+                                    #this is because we have multi-select categories now and it is now useful to know
+                                    data[athlete]['category'] = database[athlete][competition]['category']
+                                    
                                 except:
                                     #There are some scenarios where an athlete only competes day 1 but not day 2 or vice versa
                                     #also important for finals
                                     #in those cases, if we cant find the data,do not try to set it as it does not exist
                             
-                                    print(f"couldn't save {athlete} data for {results}")
+                                    # print(f"couldn't save {athlete} data for {results}")
                                     pass
                                     
     # print(data)
@@ -135,7 +142,7 @@ def get_color(score, max_score):
 
 # Function to update the bubble plot
 def update_bubble_plot(database, competition, categories, results, apparatus):
-    data = {'x': [], 'y': [], 'size': [], 'name': [], 'score': [], 'color': []}
+    data = {'x': [], 'y': [], 'category': [], 'size': [], 'name': [], 'score': [], 'color': []}
     
     
     
@@ -190,6 +197,9 @@ def update_bubble_plot(database, competition, categories, results, apparatus):
                 data['size'].append((size / 6) ** size_exp)
             else:
                 data['size'].append(size ** size_exp)
+                
+            #add category data
+            data['category'].append(stats['category'])
     return data
 
 def update_table(database, competition, categories, results, apparatus, selected_athlete=None):
@@ -227,25 +237,37 @@ def update_table(database, competition, categories, results, apparatus, selected
         df['E score'] = df['E'].map('{:.3f}'.format)
         df['Score'] = df['Score'].map('{:.3f}'.format)
         
+        # create "Category" column with capital "C" and map the acronyms to the full text
+        df['Category'] = df['category'].map(database['category_acronyms'])
+        
         # Add rank column
         df['Rank'] = df.index + 1
         
         # Reorder columns
-        df = df[['Rank', 'Athlete name', 'D score', 'E score', 'Score']]
+        df = df[['Rank', 'Athlete name', 'Category','D score', 'E score', 'Score']]
         
         # Generate HTML table with highlighted row if a selected athlete is provided
         table_rows = []
         for i in range(len(df)):
             row_data = df.iloc[i]
-            background_color = 'yellow' if row_data['Athlete name'] == selected_athlete else 'white'
-            table_row = html.Tr([html.Td(row_data[col], style={'background-color': background_color}) for col in df.columns])
+            background_color = 'yellow' if row_data['Athlete name'] == selected_athlete else ('white' if i % 2 == 0 else '#e6f2ff') #making it blue if not selected
+            table_row = html.Tr(
+                [html.Td(row_data[col], style={'background-color': background_color, 'padding': '10px'}) for col in df.columns]
+            )
             table_rows.append(table_row)
         
         table = html.Table(
+            # # Header
+            # [html.Tr([html.Th(col) for col in df.columns])] +
+            # # Body
+            # table_rows
             # Header
-            [html.Tr([html.Th(col) for col in df.columns])] +
+            # Header
+            [html.Tr([html.Th(col, style={'padding': '10px', 'background-color': '#cce7ff'}) for col in df.columns])] +
             # Body
-            table_rows
+            table_rows,
+            style={'border-collapse': 'collapse', 'width': 'auto'}
+            
         )
     
     return table
@@ -260,7 +282,7 @@ dropdown_style = {'width': '50%'}  # Adjust the width as needed
 #I might want to make Cateogry, and other drop downs, multi-select
 
 overview_layout = html.Div([
-    html.H3('Competition Overview'),
+    html.H3('Competition Data Selection'),
     dbc.Row([
         dbc.Col([
             html.Div("Competition", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
@@ -300,11 +322,12 @@ overview_layout = html.Div([
     
     
     dbc.Row([
+        html.H3('Interactive Bubble Plot'),
         dbc.Col(
             dcc.Graph(id='bubble-plot'),
             width=6
         ),
-        html.H3("Filtered Data Table"),
+        html.H3("Data Table"),
         
         dbc.Col(
             html.Div(id='table-container'),
@@ -410,9 +433,29 @@ def update_plot_and_table(results, apparatus, categories, competition, clickData
     # Update bubble plot
     # print(f"plot and table categories: {categories}")
     data = update_bubble_plot(database, competition, categories, results, apparatus)
+    
+    #Adding full category name in the data
+    #ordered dict seems to be needed to make sure when i convert from ar=cronym to name the order stays the same
+    mapped_data = OrderedDict()
+    
+    if data['x']:
+        for key, values in data.items():
+            if key == 'category':
+                mapped_data['category'] = []
+                for value in values:
+                    mapped_data['category'].append(database['category_acronyms'].get(value, value))
+            else:
+                mapped_data[key] = values
+    
+        # print(f"mapped_data: {mapped_data}")
+    
+        # Let's use this new mapped data!
+        data = mapped_data
+        # print(f"data: {data}")
+        
     fig = px.scatter(data, x='x', y='y', color='color', size='size', hover_name='name',
-                     color_continuous_scale='Viridis', opacity=0.6, hover_data={'name': True, 'x': False, 'y': False, 'size': False})
-    fig.update_layout(title="D score vs. E score Interactive Bubble Plot", 
+                     color_continuous_scale='Viridis', opacity=0.6, hover_data={'name': True,'category':True, 'x': False, 'y': False, 'size': False})
+    fig.update_layout(title=f"{database['competition_acronyms'][competition]}: D score vs. E score", 
                       xaxis_title="E score", 
                       yaxis_title="D score", 
                       autosize=True,
@@ -423,11 +466,15 @@ def update_plot_and_table(results, apparatus, categories, competition, clickData
     fig.update_traces(text=data['score'], textposition='top center')  
 
     # Customize hover template
-    hover_template = ("<b>%{hovertext}</b><br>" +
-                      "D score: %{y:.3f}<br>" +
-                      "E score: %{x:.3f}<br>" +
-                      "Score: %{text:.3f}")
-    fig.update_traces(hovertemplate=hover_template)
+    hover_template = (
+        "<b>%{hovertext}</b><br>" +
+        "Category: %{customdata}<br>" +
+        "D score: %{y:.3f}<br>" +
+        "E score: %{x:.3f}<br>" +
+        "Score: %{text:.3f}"
+    )
+    
+    fig.update_traces(hovertemplate=hover_template, customdata=data['category'])
     
     # Update color bar legend
     fig.update_coloraxes(colorbar_title="Score")
