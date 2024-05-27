@@ -123,51 +123,58 @@ def get_color(score, max_score):
 def update_bubble_plot(database, competition, category, results, apparatus):
     data = {'x': [], 'y': [], 'size': [], 'name': [], 'score': [], 'color': []}
     
-    #TODO change this max score thing likely
-    # max_score = max([stats['Score'] for values in database.values() if day in values for app, stats in values[day].items() if app == apparatus])
-    max_score = 16
-    exp = 3  # Adjust this as needed
+    
     
     #filter the data 
     bubble_data = get_category_data_for_competition_day(database, competition, category, results, apparatus)
     
+
     if not bubble_data:
         print("no bubble plot data")
-        table = html.Table()
+        # table = html.Table()
     else:
         # print("we have bubble data!")
-    
-        for name, values in bubble_data.items():
-            for app, stats in values.items():
-                if app == apparatus:
-                    if stats['E'] == 0.0:
-                        data['x'].append(np.nan)
-                    else:
-                        data['x'].append(stats['E'])
-    
-                    if stats['D'] == 0.0:
-                        data['y'].append(np.nan)
-                    else:
-                        data['y'].append(stats['D'])
-    
-                    data['name'].append(name)
-                    data['score'].append(stats['Score'])
-                    
-                    # Make it zero if it's nan
-                    if math.isnan(stats['Score']):
-                        size = 0.0
-                        color = 0.0
-                    else:
-                        size = stats['Score']
-                        color = stats['Score']
-                        
-                    data['color'].append(get_color(color ** exp, max_score ** exp))
-                        
-                    size_exp = 1.5
-                    if apparatus == "AA":
-                        data['size'].append((size / 6) ** size_exp)
-                    else:
-                        data['size'].append(size ** size_exp)
+        # print(bubble_data)
+        
+        #TODO change this max score thing likely
+        max_score = max([values['Score'] for values in bubble_data.values()])
+        # max_score = 16
+        # print(f"max score: {max_score}")
+        exp = 3  # Adjust this as needed
+        
+        
+        for name, stats in bubble_data.items():
+            print(f"name: {name}")
+            print(f"stats: {stats}")
+            #I've already filtered the apparatus
+            if stats['E'] == 0.0:
+                data['x'].append(np.nan)
+            else:
+                data['x'].append(stats['E'])
+
+            if stats['D'] == 0.0:
+                data['y'].append(np.nan)
+            else:
+                data['y'].append(stats['D'])
+
+            data['name'].append(name)
+            data['score'].append(stats['Score'])
+            
+            # Make it zero if it's nan
+            if math.isnan(stats['Score']):
+                size = 0.0
+                color = 0.0
+            else:
+                size = stats['Score']
+                color = stats['Score']
+                
+            data['color'].append(get_color(color ** exp, max_score ** exp))
+                
+            size_exp = 1.5
+            if apparatus == "AA":
+                data['size'].append((size / 6) ** size_exp)
+            else:
+                data['size'].append(size ** size_exp)
     return data
 
 def update_table(database, competition, category, results, apparatus, selected_athlete=None):
@@ -196,6 +203,9 @@ def update_table(database, competition, category, results, apparatus, selected_a
         # print(f"df: {df}")
         # Reset index to include Athlete name as a column
         df = df.reset_index().rename(columns={'index': 'Athlete name'})
+        
+        #Fill any nans to 0.000
+        df = df.fillna(0.000)
         
         # Truncate score values to 3 decimal points (do not round)
         df['D score'] = df['D'].map('{:.3f}'.format)
@@ -360,7 +370,7 @@ def update_plot_and_table(results, apparatus, category, competition, clickData):
     data = update_bubble_plot(database, competition, category, results, apparatus)
     fig = px.scatter(data, x='x', y='y', color='color', size='size', hover_name='name',
                      color_continuous_scale='Viridis', opacity=0.6, hover_data={'name': True, 'x': False, 'y': False, 'size': False})
-    fig.update_layout(title="Interactive Chart", 
+    fig.update_layout(title="D score vs. E score Interactive Bubble Plot", 
                       xaxis_title="E score", 
                       yaxis_title="D score", 
                       autosize=True,
@@ -382,13 +392,16 @@ def update_plot_and_table(results, apparatus, category, competition, clickData):
     
     # Map color values to score values for color bar tick labels
     color_values = np.linspace(0, 1, 11)  
-    #TODO fix max score
-    # max_score = max(data['score'])
-    max_score = 16
-    score_values = [value * max_score for value in color_values]  
     
-    # Update color bar tick labels
-    fig.update_coloraxes(colorbar_tickvals=color_values, colorbar_ticktext=[f"{score:.3f}" for score in score_values])
+    #only try to get a max score if we have plottable data, otherwise set max_score to an arbitrary value
+    if not data['x']:
+        max_score = 16
+    else:
+        max_score = max(data['score'])
+        score_values = [value * max_score for value in color_values]  
+        
+        # Update color bar tick labels
+        fig.update_coloraxes(colorbar_tickvals=color_values, colorbar_ticktext=[f"{score:.3f}" for score in score_values])
     
     # If a point is clicked, highlight the corresponding row in the table
     if clickData:
