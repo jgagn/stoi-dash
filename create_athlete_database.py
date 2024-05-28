@@ -49,7 +49,10 @@ category_acronyms = {"SR21":"Senior (21+)",
                      "JR15": "Junior (15-16)",
                      "Aspire": "Aspire",
                      }
-
+competition_dates = {"EC2024": "2024-02-18",
+                     "CC2023": "2023-05-18",
+                     "CC2024": "2024-06-05"
+                        }
 #%% Rename column headers
 # the format is a bit silly, where there are two levels of headers
 # the key is that the data goes D score, Score and Rank
@@ -150,6 +153,8 @@ athlete_database['overview'] = comp_overview
 #add acronym data here
 athlete_database['competition_acronyms'] = competition_acronyms
 athlete_database['category_acronyms'] = category_acronyms
+#and date data
+athlete_database['competition_dates'] = competition_dates
 
 for athlete in athletes:
     #create an dictionary entry for the athlete in the athlete_database

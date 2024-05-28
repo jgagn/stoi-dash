@@ -43,6 +43,9 @@ from team_scenario_calcs import team_score_calcs
 
 #ordered dict
 from collections import OrderedDict
+
+#date time to sort competitions
+from datetime import datetime
 #%% Import Data 
 #use absolute path
 
@@ -88,6 +91,16 @@ app.title = "STOI Demo"
 #     VALID_USERNAME_PASSWORD_PAIRS
 # )
 
+########################
+#%% Global Variables ###
+########################
+
+#I want to make the drop down selectors take up less width
+dropdown_style = {'width': '50%'}  # Adjust the width as needed
+tlas = ['FX', 'PH', 'SR', 'VT', 'PB', 'HB', 'AA']
+exclude_keys = ["overview", "competition_acronyms", "category_acronyms","competition_dates"]
+
+
 #%% Helpful functions
 
 def get_category_data_for_competition_day(database, competition, categories, results, apparatus):
@@ -98,7 +111,7 @@ def get_category_data_for_competition_day(database, competition, categories, res
     
     for athlete, competitions in database.items():
         
-        if athlete not in {"overview", "competition_acronyms", "category_acronyms"}:
+        if athlete not in exclude_keys:
             # print(f"athlete: {athlete}")
             # print(f"competition: {competition}")
             # print(f"competitions: {competitions.keys()}")
@@ -126,14 +139,6 @@ def get_category_data_for_competition_day(database, competition, categories, res
                                     
     # print(data)
     return data
-
-########################
-#%% Global Variables ###
-########################
-
-#I want to make the drop down selectors take up less width
-dropdown_style = {'width': '50%'}  # Adjust the width as needed
-
 
 ###################################
 #%% Tab 1: Competition Overview ###
@@ -562,62 +567,94 @@ def barplot_width(n):
     return width
 
 # Define layout for the second tab with dropdowns and bar graph
-exclude_keys = ["overview", "competition_acronyms", "category_acronyms"]
+
 
 #SUBPLOT CODE
 
 # Define function to generate subplot based on athlete dropdown selection change
 def generate_subplot(athlete):
-    # Dummy data (replace with your actual data)
-    competitions = ['Comp1', 'Comp2', 'Comp3', 'Comp4', 'Comp5']
-    tlas = ['FX', 'PH', 'SR', 'VT', 'PB', 'HB', 'AA']
-    scores = {
-        'FX': [10, 20, 15, 25, 30],
-        'PH': [15, 25, 20, 30, 35],
-        'SR': [20, 30, 25, 35, 40],
-        'VT': [25, 35, 30, 40, 45],
-        'PB': [30, 40, 35, 45, 50],
-        'HB': [35, 45, 40, 50, 55],
-        'AA': [40, 50, 45, 55, 60]
-    }
-
-    # Create traces for each TLA
-    traces = []
-    for tla in tlas:
-        trace = go.Scatter(
-            x=competitions,
-            y=scores[tla],
-            mode='lines+markers',
-            name=tla,
-            # name=None,
-        )
-        traces.append(trace)
-
+    
+    #start by intitiating plot
     # Create subplot with independent y-axes
     fig = make_subplots(rows=7, cols=1, shared_xaxes=True) #, subplot_titles=tlas)
-
-    # Add traces to subplot
-    for i, trace in enumerate(traces):
-        fig.add_trace(trace, row=i + 1, col=1)
-
-    # Update layout settings
-    fig.update_layout(
-        title='Trends Across Competitions',
-        xaxis=dict(title='Competitions'),
-        width=1000,
-        height=1400,
-        showlegend=False,
-        margin=dict(l=40, r=40, t=0, b=0)  # Adjust the margins as needed
-    )
     
-    # Remove the x-axis title for the first subplot
-    fig.update_xaxes(title='', row=1, col=1)
-    fig.update_xaxes(title='Competitions', row=7, col=1)
+    #if we've selected an athlete, then proceed
+    if athlete and athlete not in exclude_keys:
+        print(f"athlete: {athlete}")
+        #get competitions
+        competitions = database[athlete].keys()
+        comp_days_date = []
+        # i = 0 #temporary date counter
+        for comp in competitions:
+            results = [key for key in database[athlete][comp].keys() if key not in ["category", "average", "best"]]
+            for day in results:
+                date = database['competition_dates'][comp]
+                comp_days_date.append([comp,day,date])
+                
+
+        #re-order based on date and comeptition date
+        # Define the secondary sort order
+        secondary_sort_order = {'day1': 1, 'day2': 2, 'day3': 3, 'day4': 4,#if format is days
+                                'QF': 1, 'TF': 2, 'AA': 3, 'EF': 4, #if format is qualifying, team final, aa final, event final
+                                }
+        
+        # Sort the list of lists by the date (primary key) and then by the secondary key
+        comp_days_date_sorted = sorted(comp_days_date, key=lambda x: (datetime.strptime(x[2], '%Y-%m-%d'),secondary_sort_order[x[1]]))
+        
+        print(comp_days_date_sorted)
+        
+        scores = {}
+        comp_labels = []
+        for tla in tlas:
+            tla_data = []
+            for comp,day,date in comp_days_date_sorted:
+                # print(f"comp: {comp}, day: {day}, date: {date}")
+                comp_labels.append(comp+" ("+day+")")
+                score = database[athlete][comp][day][tla]['Score']
+                if score == 0:
+                    score = np.nan #set to nan
+                tla_data.append(score)
+            scores[tla] = tla_data
     
-    # add x-axis and y axis labels 
-    for i in range(1, 8):
-        fig.update_xaxes(showticklabels=True, row=i, col=1)
-        fig.update_yaxes(title=tlas[i-1], row=i, col=1)
+        # Create traces for each TLA
+        traces = []
+        for tla in tlas:
+            trace = go.Scatter(
+                x=comp_labels,
+                y=scores[tla],
+                mode='lines+markers',
+                name=tla,
+                hoverinfo='text',  # Set hover info to only display text
+                text=[f"Score: {score}" for score in scores[tla]]
+                # name=None,
+            )
+            traces.append(trace)
+    
+        # Add traces to subplot
+        for i, trace in enumerate(traces):
+            fig.add_trace(trace, row=i + 1, col=1)
+    
+        # Update layout settings
+        fig.update_layout(
+            # title='Trends Across Competitions',
+            xaxis=dict(title='Competitions'),
+            width=1000,
+            height=1400,
+            showlegend=False,
+            margin=dict(l=40, r=40, t=0, b=0)  # Adjust the margins as needed
+        )
+        
+        # Remove the x-axis title for the first subplot
+        fig.update_xaxes(title='', row=1, col=1)
+        fig.update_xaxes(title='Competitions', row=7, col=1)
+        
+        # add x-axis and y axis labels 
+        for i in range(1, 8):
+            fig.update_xaxes(showticklabels=True, row=i, col=1)
+            fig.update_yaxes(title=tlas[i-1], row=i, col=1)
+    else:
+        print("no athlete")
+            
     return fig
 
 
