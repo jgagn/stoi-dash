@@ -144,12 +144,10 @@ def get_color(score, max_score):
 def update_bubble_plot(database, competition, categories, results, apparatus):
     data = {'x': [], 'y': [], 'category': [], 'size': [], 'name': [], 'score': [], 'color': []}
     
-    
-    
     #filter the data 
+
     bubble_data = get_category_data_for_competition_day(database, competition, categories, results, apparatus)
     
-
     if not bubble_data:
         # print("no bubble plot data")
         # table = html.Table()
@@ -205,6 +203,8 @@ def update_bubble_plot(database, competition, categories, results, apparatus):
 def update_table(database, competition, categories, results, apparatus, selected_athlete=None):
     # Filter the database based on selected day and apparatus
     # filtered_data = {name: stats for name, values in database.items() if day in values for app, stats in values[day].items() if app == apparatus}
+    
+    
     
     table_data = get_category_data_for_competition_day(database, competition, categories, results, apparatus)
     
@@ -352,7 +352,13 @@ def update_results_dropdown(competition, categories, database):
     #will need to only show the results options that correspond to multi categories
     if competition and categories:
         results_options = []
+        #although categories should be a list, sometimes it returns just one
+        #lets make sure it is a list if its not
+        if not isinstance(categories, list):
+            categories = [categories]
+            
         for category in categories:
+            # print(f"category: {category}")
             # Get the available results options from the database dictionary
             options = database['overview'][competition][category] 
             results_options.append(options)
@@ -360,6 +366,7 @@ def update_results_dropdown(competition, categories, database):
         # print(f"result_options: {results_options}")
         # Create options for the results dropdown
         
+    
         def find_common_elements(list_of_lists):
             # Convert each sublist to a set
             sets = [set(sublist) for sublist in list_of_lists]
@@ -432,6 +439,11 @@ def set_category_dropdown_value(competition, options):
 def update_plot_and_table(results, apparatus, categories, competition, clickData):
     # Update bubble plot
     # print(f"plot and table categories: {categories}")
+    
+    #need to make sure categories is a list, it should  be sometimes isn't
+    if not isinstance(categories, list):
+        categories = [categories]
+    
     data = update_bubble_plot(database, competition, categories, results, apparatus)
     
     #Adding full category name in the data
@@ -486,8 +498,10 @@ def update_plot_and_table(results, apparatus, categories, competition, clickData
     if not data['x']:
         max_score = 16
     else:
-        max_score = max(data['score'])
+        max_score = np.nanmax(data['score'])
+        # print(f"max score: {max_score}")
         score_values = [value * max_score for value in color_values]  
+        # print(f"score values: {score_values}")
         
         # Update color bar tick labels
         fig.update_coloraxes(colorbar_tickvals=color_values, colorbar_ticktext=[f"{score:.3f}" for score in score_values])

@@ -98,23 +98,34 @@ database.columns = new_columns
 comp_overview={}
 
 #extract unique competitions
-competitions = database['Competition']
+competitions = database['Competition'].unique()
 
 #for each competition, extract categories
 for comp in competitions:
+    print(f"comp: {comp}")
     #lets add the competition to the overview
     comp_overview[comp] = {}
     
     # Step 1: Filter the DataFrame
-    competition_df = database[database['Competition'] == comp]
+    # competition_df = database[database['Competition'] == comp]
+    
+    # This will reset the index of competition_df after filtering it based on the competition. 
+    # Then, when you filter category_df based on the category, 
+    # the index will be properly aligned with the boolean Series, 
+    # potentially avoiding the IndexingError.
+    competition_df = database[database['Competition'] == comp].reset_index(drop=True)
     
     # Step 2: Extract unique values from the 'values' column of the filtered DataFrame
     categories = competition_df['Category'].unique()
     
     # Step 3: For all categories, get unique competition day results
     for category in categories:
+        print(f"category: {category}")
         
-        category_df = database[competition_df['Category'] == category]
+        #rest index needed to ensure the index is sequential and matches the boolean series index
+        # category_df = competition_df.reset_index(drop=True)[competition_df['Category'] == category]
+        category_df = competition_df.reset_index(drop=True).loc[competition_df['Category'] == category]
+
         results = category_df['Results'].unique()
         
         #lets add the category to the comp overview
@@ -184,7 +195,7 @@ for athlete in athletes:
                                 athlete_database[athlete][comp][day][tla][value] = float(val.iloc[0])
                             except:
                                 #I want to put a nan if its not floatable
-                                athlete_database[athlete][comp][day][tla][value] = np.nan
+                                athlete_database[athlete][comp][day][tla][value] = 0.0
 
                         #Data does't have E score - doing math
                         D = athlete_database[athlete][comp][day][tla][order[0]]
@@ -217,13 +228,14 @@ for athlete in athletes:
 #do math to get average and best, save that data
 #will only do for score (could be done to get highest D score, E score... not now)
 
-#loop through athlets
+#loop through athletes
 for athlete in athletes:
     #loop through competitions
     for comp in comp_overview.keys():
         #remember that not all athletes compete at all compettions
         #check to see if there is an entry for that comp
-        if athlete_database[athlete][comp]:
+        # try: if athlete_database[athlete][comp]:
+        if comp in athlete_database.get(athlete, {}):
             # print(f"{athlete} competed at {comp}")
             # complete statistical analysis for the days they competed
             # keep in mind they may not have competed on all events on all days
@@ -269,13 +281,6 @@ for athlete in athletes:
         else:
             print(f"{athlete} did not compete at {comp}")
         
-        
-        
-
-
-
-        
-
 #%% I want to pickle my database 
 
 # File path to save the pickled database
