@@ -127,6 +127,13 @@ def get_category_data_for_competition_day(database, competition, categories, res
     # print(data)
     return data
 
+########################
+#%% Global Variables ###
+########################
+
+#I want to make the drop down selectors take up less width
+dropdown_style = {'width': '50%'}  # Adjust the width as needed
+
 
 ###################################
 #%% Tab 1: Competition Overview ###
@@ -271,11 +278,6 @@ def update_table(database, competition, categories, results, apparatus, selected
         )
     
     return table
-
-
-
-#I want to make the drop down selectors take up less width
-dropdown_style = {'width': '50%'}  # Adjust the width as needed
 
 # Define layout of the app
 
@@ -548,31 +550,108 @@ def barplot_width(n):
     return width
 
 # Define layout for the second tab with dropdowns and bar graph
+exclude_keys = ["overview", "competition_acronyms", "category_acronyms"]
+
+
 tab2_layout = html.Div([
-    html.H3('Individual Athlete Analysis'),
+    html.H3('Specific Competition Overview'),
     html.Div([
+        html.Div("Athlete", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
         dcc.Dropdown(
-            id='athlete-dropdown',
-            options=[{'label': athlete, 'value': athlete} for athlete in database.keys()],
+            id='athlete-dropdown2',
+            options = [{'label': athlete, 'value': athlete} for athlete in database.keys() if athlete not in exclude_keys],
             value=next(iter(database)),  # Default value
             multi=False,  # Single select
-            style={'width': '50%'}
+            style=dropdown_style
         ),
+        
+        html.Div("Competition", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
         dcc.Dropdown(
-            id='day-dropdown',
-            options=[{'label': day, 'value': day} for day in database[next(iter(database))].keys()],
+            id='competition-dropdown2',
+            # options=[{'label': database['competition_acronyms'][comp], 'value': comp} for comp in database['overview'].keys()],
+            value=list(next(iter(database.values())).keys())[0],
+            style=dropdown_style
+        ),
+        
+        html.Div("Results (can select more than 1):", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
+        dcc.Dropdown(
+            id='results-dropdown2',
+            # options=[{'label': day, 'value': day} for day in database[next(iter(database))].keys()],
             value=['day1','day2'],  # Default value
             multi=True,  # Allow multi-select
-            style={'width': '50%'}
+            style=dropdown_style
         )
     ]),
-    dcc.Graph(id='score-graph', style={'width': '1000px', 'height': '600px'})
+    dcc.Store(id='results-store2', data=database),  # Store the database - needed to dynamically change data in dropdown menus
+    dcc.Graph(id='score-graph', style={'width': '1000px', 'height': '600px'}),
+    html.H3('Trends Across Competions'),
 ])
+
+#COMPETITON CALLBACKS
+# Define callback to update the options of the results dropdown based on the selected competition
+@app.callback(
+    Output('competition-dropdown2', 'options'),
+    [Input('athlete-dropdown2', 'value')],
+    [State('results-store2', 'data')]
+)
+def update_competitions_dropdown(athlete,database):
+    if athlete:
+        # results_options = database[athlete].keys() #TODO need to remove category
+        results_options = [key for key in database[athlete].keys()]
+        # Create options for the results dropdown
+        return [{'label': results, 'value': results} for results in results_options]
+    else:
+        return []
+
+# Define callback to set the value of the category dropdown to the first option when the competition changes
+@app.callback(
+    Output('competition-dropdown2', 'value'),
+    [Input('athlete-dropdown2', 'value')],
+    [State('competition-dropdown2', 'options')]
+)
+def set_competitions_dropdown_value(athlete,options):
+    if options:
+        return options[0]['value']
+    else:
+        return None
+
+#RESULTS CALLBACKS
+# Define callback to update the options of the results dropdown based on the selected competition
+@app.callback(
+    Output('results-dropdown2', 'options'),
+    [Input('athlete-dropdown2', 'value'),
+    Input('competition-dropdown2', 'value')],
+    [State('results-store2', 'data')]
+)
+def update_results_dropdown(athlete,competition,database):
+    if athlete and competition:
+        # results_options = database[athlete][competition].keys() #TODO need to remove category
+        results_options = [key for key in database[athlete][competition].keys() if key != "category"]
+        # Create options for the results dropdown
+        return [{'label': results, 'value': results} for results in results_options]
+    else:
+        return []
+
+# Define callback to set the value of the category dropdown to the first option when the competition changes
+@app.callback(
+    Output('results-dropdown2', 'value'),
+    [Input('athlete-dropdown2', 'value'),
+    Input('competition-dropdown2', 'value')],
+    [State('results-dropdown2', 'options')]
+)
+def set_results_dropdown_value(athlete,competion,options):
+    if options:
+        return options[0]['value']
+    else:
+        return None
+
+
+#PLOT 1 CALLBACKS
 
 @app.callback(
     Output('score-graph', 'figure'),
     [Input('athlete-dropdown', 'value'),
-     Input('day-dropdown', 'value')]
+     Input('results-dropdown', 'value')]
 )
 def update_score_graph(selected_athlete, selected_days):
     traces = []
