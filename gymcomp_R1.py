@@ -619,34 +619,38 @@ def generate_subplot(athlete):
         # Create traces for each TLA
         traces = []
         for tla in tlas:
+            max_score = np.nanmax(scores[tla])
+            min_score = np.nanmin(scores[tla])
+            score_range = max_score - min_score
             trace = go.Scatter(
                 x=comp_labels,
                 y=scores[tla],
-                mode='lines+markers',
+                mode='lines+markers+text',
                 name=tla,
                 hoverinfo='text',  # Set hover info to only display text
-                text=[f"Score: {score}" for score in scores[tla]]
+                text=[f"{score}" for score in scores[tla]],
+                textposition=['top center' if score - min_score < score_range * 0.5 else 'bottom center' for score in scores[tla]]  # Adjust textposition based on y-axis position
                 # name=None,
             )
             traces.append(trace)
     
         # Add traces to subplot
-        for i, trace in enumerate(traces):
+        for i, trace in enumerate(traces): 
             fig.add_trace(trace, row=i + 1, col=1)
     
         # Update layout settings
         fig.update_layout(
-            # title='Trends Across Competitions',
-            xaxis=dict(title='Competitions'),
+            title=f'{athlete} Competition Scores',
+            # xaxis=dict(title='Competitions'),
             width=1000,
-            height=1400,
+            height=800,
             showlegend=False,
-            margin=dict(l=40, r=40, t=0, b=0)  # Adjust the margins as needed
+            margin=dict(l=40, r=40, t=40, b=40)  # Adjust the margins as needed
         )
         
         # Remove the x-axis title for the first subplot
         fig.update_xaxes(title='', row=1, col=1)
-        fig.update_xaxes(title='Competitions', row=7, col=1)
+        # fig.update_xaxes(title='Competitions', row=7, col=1)
         
         # add x-axis and y axis labels 
         for i in range(1, 8):
@@ -660,7 +664,8 @@ def generate_subplot(athlete):
 
 
 tab2_layout = html.Div([
-    html.H3('Specific Competition Apparatus Overview'),
+    html.H3('Plot Athlete Scores Across Competitions'),
+    
     html.Div([
         html.Div("Athlete", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
         dcc.Dropdown(
@@ -670,7 +675,13 @@ tab2_layout = html.Div([
             multi=False,  # Single select
             style=dropdown_style
         ),
-        
+    ]),
+    
+    # Subplot will be added here based on athlete dropdown selection change
+    dcc.Graph(id='subplot'),
+    
+    html.H3('Score Breakdown by Competition'),
+    html.Div([
         html.Div("Competition", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
         dcc.Dropdown(
             id='competition-dropdown2',
@@ -690,9 +701,7 @@ tab2_layout = html.Div([
     ]),
     dcc.Store(id='results-store2', data=database),  # Store the database - needed to dynamically change data in dropdown menus
     dcc.Graph(id='score-graph', style={'width': '1000px', 'height': '400px'}),
-    html.H3('Trends Across Competions'),
-    # Subplot will be added here based on athlete dropdown selection change
-    dcc.Graph(id='subplot')
+    
 ])
 
 #SINGLE DROPDOWN CALLBACKS
