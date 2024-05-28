@@ -20,7 +20,7 @@ Created on Tue Mar 26 13:38:51 2024
 #%% Imports
 
 import dash
-from dash import dcc, html, dash_table
+from dash import dcc, html, dash_table, callback_context
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 import pandas as pd
@@ -523,18 +523,26 @@ def update_plot_and_table(results, apparatus, categories, competition, clickData
 ########################################
 
 #colour dictionary
+
 barplot_colours = {'D':
-                       {'day1':'blue',
-                       'day2':'green',
-                       'average':'orange',
-                       'best':'magenta',
-                        },
+                       ['rgb(31, 119, 180)',  # Blue
+                        'rgb(255, 127, 14)',  # Orange
+                        'rgb(44, 160, 44)',   # Green
+                        'rgb(214, 39, 40)',   # Red
+                        'rgb(148, 103, 189)', # Purple
+                        'rgb(140, 86, 75)',   # Brown
+                        'rgb(227, 119, 194)'  # Pink
+                        ]
+                        ,
                    'E':
-                       {'day1':'#ADD8E6',
-                       'day2':'#90EE90',
-                       'average':'#FFD700',
-                       'best':'#FFB6C1',
-                        },
+                       ['rgba(31, 119, 180, 0.5)',  # Light Blue
+                        'rgba(255, 127, 14, 0.5)',  # Light Orange
+                        'rgba(44, 160, 44, 0.5)',   # Light Green
+                        'rgba(214, 39, 40, 0.5)',   # Light Red
+                        'rgba(148, 103, 189, 0.5)', # Light Purple
+                        'rgba(140, 86, 75, 0.5)',   # Light Brown
+                        'rgba(227, 119, 194, 0.5)'  # Light Pink
+                        ]
                      }
 def barplot_width(n):
     if n == 1:
@@ -591,65 +599,39 @@ tab2_layout = html.Div([
     html.H3('Trends Across Competions'),
 ])
 
-#COMPETITON CALLBACKS
-# Define callback to update the options of the results dropdown based on the selected competition
+#SINGLE DROPDOWN CALLBACKS
+
+# Define a single callback to update both competition and results dropdowns
 @app.callback(
-    Output('competition-dropdown2', 'options'),
-    [Input('athlete-dropdown2', 'value')],
+    [Output('competition-dropdown2', 'options'),
+     Output('competition-dropdown2', 'value'),
+     Output('results-dropdown2', 'options'),
+     Output('results-dropdown2', 'value')],
+    [Input('athlete-dropdown2', 'value'),
+     Input('competition-dropdown2', 'value')],
     [State('results-store2', 'data')]
 )
-def update_competitions_dropdown(athlete,database):
-    if athlete:
-        # results_options = database[athlete].keys() #TODO need to remove category
-        results_options = [key for key in database[athlete].keys()]
-        # Create options for the results dropdown
-        return [{'label': results, 'value': results} for results in results_options]
-    else:
-        return []
+def update_dropdowns(athlete, competition, database):
+    ctx = callback_context
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
-# Define callback to set the value of the category dropdown to the first option when the competition changes
-@app.callback(
-    Output('competition-dropdown2', 'value'),
-    [Input('athlete-dropdown2', 'value')],
-    [State('competition-dropdown2', 'options')]
-)
-def set_competitions_dropdown_value(athlete,options):
-    if options:
-        return options[0]['value']
-    else:
-        return None
+    if triggered_id == 'athlete-dropdown2':
+        if athlete:
+            competitions = list(database[athlete].keys())
+            comp_options = [{'label': database['competition_acronyms'][comp], 'value': comp} for comp in competitions]
+            
+            return comp_options, None, [], None
+        else:
+            return [], None, [], None
 
-#RESULTS CALLBACKS
-# Define callback to update the options of the results dropdown based on the selected competition
-@app.callback(
-    Output('results-dropdown2', 'options'),
-    [Input('athlete-dropdown2', 'value'),
-    Input('competition-dropdown2', 'value')],
-    [State('results-store2', 'data')]
-)
-def update_results_dropdown(athlete,competition,database):
-    if athlete and competition:
-        # results_options = database[athlete][competition].keys() #TODO need to remove category
-        results_options = [key for key in database[athlete][competition].keys() if key != "category"]
-        # Create options for the results dropdown
-        return [{'label': results, 'value': results} for results in results_options]
-    else:
-        return []
+    elif triggered_id == 'competition-dropdown2':
+        if athlete and competition:
+            results_options = [day for day in database[athlete][competition].keys() if day != "category"]
+            return dash.no_update, dash.no_update, [{'label': result, 'value': result} for result in results_options], None
+        else:
+            return dash.no_update, dash.no_update, [], None
 
-# Define callback to set the value of the category dropdown to the first option when the competition changes
-@app.callback(
-    Output('results-dropdown2', 'value'),
-    [Input('athlete-dropdown2', 'value'),
-    Input('competition-dropdown2', 'value')],
-    [State('results-dropdown2', 'options')]
-)
-def set_results_dropdown_value(athlete,competion,options):
-    if options:
-        return options[0]['value']
-    else:
-        return None
-
-
+    return [], None, [], None
 #PLOT 1 CALLBACKS
 
 @app.callback(
@@ -681,7 +663,7 @@ def update_score_graph(athlete, competition, results):
         #starting with negative offset so we are always around zero
         offset_multiplier = -width*(n_days-1)/2
         
-        for result in results:
+        for i,result in enumerate(results):
             # athlete = database[athlete][competition]
             d_scores = []
             e_scores = []
@@ -698,10 +680,12 @@ def update_score_graph(athlete, competition, results):
             stacked_trace_d = go.Bar(
                 x=[i + offset_multiplier for i in range(len(plot_apparatus))],  # Adjust x-location based on offset_multiplier
                 y=d_scores,
-                name=f'{result} - D',
-                hoverinfo='y+name',
+                name=f'D score ({result})',
+                # hoverinfo='y+name',
+                hovertext=[f'{d:.3f}' for d in d_scores],
+                hoverinfo='text+name',  # Use custom hover text and show trace name
                 
-                marker_color=barplot_colours['D'][result],  # Set color for D scores
+                marker_color=barplot_colours['D'][i],  # Set color for D scores
                 # marker_pattern='cross',
                 # marker=dict(pattern='+', pattern_fgcolor='black'),
                 # marker_pattern_fgcolor=barplot_colours['E'][day],
@@ -714,13 +698,20 @@ def update_score_graph(athlete, competition, results):
             stacked_trace_e = go.Bar(
                 x=[i + offset_multiplier for i in range(len(plot_apparatus))],  # Adjust x-location based on offset_multiplier
                 y=e_scores,
-                name=f'{result} - E',
-                hoverinfo='y+name',
-                marker_color=barplot_colours['E'][result],  # Set color for E scores
+                name=f'E score ({result})',
+                #custom hover text
+                # hoverinfo='y+name',
+                hovertext=[f'{e:.3f}' for e in e_scores],
+                hoverinfo='text+name',  # Use custom hover text and show trace name
+                
+                marker_color=barplot_colours['E'][i],  # Set color for E scores
                 offsetgroup=result,  # Group by day
                 legendgroup=result,  # Group by day
                 base=d_scores,  # Offset by D scores
                 width = width,
+                # Adding text above the bar plot for the whole score, truncated to 3 decimal places
+                text=[f'{d + e:.3f}' for d, e in zip(d_scores, e_scores)],
+                textposition='outside'
             )
             
             traces.append(stacked_trace_d)
@@ -730,7 +721,7 @@ def update_score_graph(athlete, competition, results):
             offset_multiplier += width # Adjust the multiplier as needed to prevent overlapping bars
         
         layout = go.Layout(
-        title=f'Score Breakdown for {athlete}',
+        title=f'Score Breakdown for {athlete} at {database["competition_acronyms"][competition]}',
         xaxis={'title': 'Apparatus'},
         yaxis={'title': 'Score', 'range': [0, max_score * 1.1]},
         barmode='relative',  # Relative bars for stacked and grouped
