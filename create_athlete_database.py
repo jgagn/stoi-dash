@@ -244,7 +244,7 @@ for athlete in athletes:
                     vals = []
                     
                     for result in results:
-                        print(f"result: {result}")
+                        # print(f"result: {result}")
                         val = athlete_database[athlete][comp][result][tla][value]
                         # if it is a zero, make it a nan
                         if val == 0:
@@ -255,7 +255,7 @@ for athlete in athletes:
                     #because some values might be nans (if did not compete)
                     #use nanmean and nanmax so it ignores them
                     #however, if all vals are nan, then just put nan
-                    print(f"vals: {vals}")
+                    # print(f"vals: {vals}")
                     
                     # Check if all values are NaN
                     
