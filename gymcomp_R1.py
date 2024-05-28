@@ -31,7 +31,7 @@ import plotly.express as px
 import pickle
 import os
 import itertools
-
+from plotly.subplots import make_subplots
 #dash authentication
 # import dash_auth # pip install dash-auth==2.0.0. <- add this to requirements.txt
 
@@ -564,6 +564,63 @@ def barplot_width(n):
 # Define layout for the second tab with dropdowns and bar graph
 exclude_keys = ["overview", "competition_acronyms", "category_acronyms"]
 
+#SUBPLOT CODE
+
+# Define function to generate subplot based on athlete dropdown selection change
+def generate_subplot(athlete):
+    # Dummy data (replace with your actual data)
+    competitions = ['Comp1', 'Comp2', 'Comp3', 'Comp4', 'Comp5']
+    tlas = ['FX', 'PH', 'SR', 'VT', 'PB', 'HB', 'AA']
+    scores = {
+        'FX': [10, 20, 15, 25, 30],
+        'PH': [15, 25, 20, 30, 35],
+        'SR': [20, 30, 25, 35, 40],
+        'VT': [25, 35, 30, 40, 45],
+        'PB': [30, 40, 35, 45, 50],
+        'HB': [35, 45, 40, 50, 55],
+        'AA': [40, 50, 45, 55, 60]
+    }
+
+    # Create traces for each TLA
+    traces = []
+    for tla in tlas:
+        trace = go.Scatter(
+            x=competitions,
+            y=scores[tla],
+            mode='lines+markers',
+            name=tla,
+            # name=None,
+        )
+        traces.append(trace)
+
+    # Create subplot with independent y-axes
+    fig = make_subplots(rows=7, cols=1, shared_xaxes=True) #, subplot_titles=tlas)
+
+    # Add traces to subplot
+    for i, trace in enumerate(traces):
+        fig.add_trace(trace, row=i + 1, col=1)
+
+    # Update layout settings
+    fig.update_layout(
+        title='Trends Across Competitions',
+        xaxis=dict(title='Competitions'),
+        width=1000,
+        height=1400,
+        showlegend=False,
+        margin=dict(l=40, r=40, t=0, b=0)  # Adjust the margins as needed
+    )
+    
+    # Remove the x-axis title for the first subplot
+    fig.update_xaxes(title='', row=1, col=1)
+    fig.update_xaxes(title='Competitions', row=7, col=1)
+    
+    # add x-axis and y axis labels 
+    for i in range(1, 8):
+        fig.update_xaxes(showticklabels=True, row=i, col=1)
+        fig.update_yaxes(title=tlas[i-1], row=i, col=1)
+    return fig
+
+
 
 tab2_layout = html.Div([
     html.H3('Specific Competition Apparatus Overview'),
@@ -597,6 +654,8 @@ tab2_layout = html.Div([
     dcc.Store(id='results-store2', data=database),  # Store the database - needed to dynamically change data in dropdown menus
     dcc.Graph(id='score-graph', style={'width': '1000px', 'height': '400px'}),
     html.H3('Trends Across Competions'),
+    # Subplot will be added here based on athlete dropdown selection change
+    dcc.Graph(id='subplot')
 ])
 
 #SINGLE DROPDOWN CALLBACKS
@@ -739,6 +798,18 @@ def update_score_graph(athlete, competition, results):
         layout = go.Layout()
         
     return {'data': traces, 'layout': layout}
+
+
+#SUBPLOT CALLBACKS
+
+# Callback to update the subplot based on athlete dropdown selection change
+@app.callback(
+    Output('subplot', 'figure'),
+    [Input('athlete-dropdown2', 'value')]
+)
+def update_subplot(athlete):
+    return generate_subplot(athlete)
+
 
 ######################
 #%% Team Scenarios ###
