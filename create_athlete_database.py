@@ -272,8 +272,9 @@ for athlete in athletes:
                     # Check if all values are NaN
                     
                     if np.all(np.isnan(vals)):
-                        athlete_database[athlete][comp]['average'][tla][value] = np.nan
-                        athlete_database[athlete][comp]['best'][tla][value] = np.nan
+                        #if they are all nans, set to zero...
+                        athlete_database[athlete][comp]['average'][tla][value] = 0.0
+                        athlete_database[athlete][comp]['best'][tla][value] = 0.0
                     else:
                         athlete_database[athlete][comp]['average'][tla][value] = np.nanmean(vals)
                         athlete_database[athlete][comp]['best'][tla][value] = np.nanmax(vals)
