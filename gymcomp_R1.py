@@ -39,7 +39,7 @@ from plotly.subplots import make_subplots
 from builtins import print
 
 #import the team scenarios calc
-from team_scenario_calcs import team_score_calcs
+from team_scenario_calcs_R1 import team_score_calcs
 
 #ordered dict
 from collections import OrderedDict
@@ -580,7 +580,7 @@ def generate_subplot(athlete):
     
     #if we've selected an athlete, then proceed
     if athlete and athlete not in exclude_keys:
-        print(f"athlete: {athlete}")
+        # print(f"athlete: {athlete}")
         #get competitions
         competitions = database[athlete].keys()
         comp_days_date = []
@@ -601,7 +601,7 @@ def generate_subplot(athlete):
         # Sort the list of lists by the date (primary key) and then by the secondary key
         comp_days_date_sorted = sorted(comp_days_date, key=lambda x: (datetime.strptime(x[2], '%Y-%m-%d'),secondary_sort_order[x[1]]))
         
-        print(comp_days_date_sorted)
+        # print(comp_days_date_sorted)
         
         scores = {}
         comp_labels = []
@@ -657,7 +657,8 @@ def generate_subplot(athlete):
             fig.update_xaxes(showticklabels=True, row=i, col=1)
             fig.update_yaxes(title=tlas[i-1], row=i, col=1)
     else:
-        print("no athlete")
+        # print("no athlete")
+        pass
             
     return fig
 
@@ -857,9 +858,9 @@ def update_subplot(athlete):
     return generate_subplot(athlete)
 
 
-######################
-#%% Team Scenarios ###
-######################
+#############################
+#%% Tab 3: Team Scenarios ###
+#############################
 
 # Sample data for demonstration
 team_score_dummy = [
@@ -883,27 +884,62 @@ def generate_table(data):
         style_table={'overflowX': 'auto'},  # Enable horizontal scroll if content overflows
     )
 
-tab3_layout = html.Div([
-    html.Label('Results:'),
-    dcc.Dropdown(
-        id='results-dropdown',
-        options=[
-            {'label': 'Day 1', 'value': 'day1'},
-            {'label': 'Day 2', 'value': 'day2'},
-            {'label': 'Average', 'value': 'average'},
-            {'label': 'Best', 'value': 'best'}
-        ],
-        value='day1',
-        style={'width': '200px'}  # Adjust width here
-    ),
+#TO DO
+#need to add competition selection
+#need to add category selection (multi-select)
 
-    html.Label('Competition Format:'),
+
+tab3_layout = html.Div([
+    html.H3('Select Data for Top Team Scores Calculations'),
+    dbc.Row([
+        dbc.Col([
+            html.Div("Competition", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
+            dcc.Dropdown(
+                id='competition-dropdown3',
+                options=[{'label': database['competition_acronyms'][comp], 'value': comp} for comp in database['overview'].keys()],
+                value=list(next(iter(database.values())).keys())[0],
+                style=dropdown_style
+            ),
+        ], width=6),
+        dbc.Col([
+            html.Div("Category (can select more than 1):", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
+            dcc.Dropdown(
+                id='category-dropdown3',
+                style=dropdown_style,
+                multi=True  # Enable multi-select
+            ),
+        ], width=6),
+        dbc.Col([
+            html.Div("Results:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
+            dcc.Dropdown(
+                id='results-dropdown3',
+                style=dropdown_style
+            ),
+        ], width=6),
+    ]),
+    dcc.Store(id='results-store3', data=database),  # Store the database - needed to dynamically change data in dropdown menus
+    # html.Label('Results:'),
+    # dcc.Dropdown(
+    #     id='results-dropdown',
+    #     options=[
+    #         {'label': 'Day 1', 'value': 'day1'},
+    #         {'label': 'Day 2', 'value': 'day2'},
+    #         {'label': 'Average', 'value': 'average'},
+    #         {'label': 'Best', 'value': 'best'}
+    #     ],
+    #     value='day1',
+    #     style={'width': '200px'}  # Adjust width here
+    # ),
+    html.H3('Select Competition Format'),
+    html.Div("Competition Format:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
+    
     html.Div([
-        dcc.Input(id='xx-input', type='number', min=1, max=15, value=5, style={'width': '50px', 'fontSize': '16px'}),
+        dcc.Input(id='xx-input', type='number', min=1, max=6, value=5, style={'width': '50px', 'fontSize': '16px'}),
         html.Label('-', style={'padding': '0 5px'}),  # Added label with padding
         dcc.Input(id='yy-input', type='number', min=1, max=6, value=4, style={'width': '50px',  'fontSize': '16px'}),
         html.Label('-', style={'padding': '0 5px'}),  # Added label with padding
-        dcc.Input(id='zz-input', type='number', min=1, max=5, value=3, style={'width': '50px', 'fontSize': '16px'}),
+        dcc.Input(id='zz-input', type='number', min=1, max=6, value=3, style={'width': '50px', 'fontSize': '16px'}),
+        html.Div("(Team Size - Competitors per Apparatus - Counting Scores per Apparatus):", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
     ]),
     
     html.Label('Show Top', style={'margin-top': '10px'}),  # Added label for the top X team scenarios
@@ -966,49 +1002,155 @@ tab3_layout = html.Div([
 # def reset_n_clicks(n_clicks):
 #     return 0
 
+# Define callback to update the options of the results dropdown based on the selected competition and category
+@app.callback(
+    Output('results-dropdown3', 'options'),
+    [Input('competition-dropdown3', 'value'),
+     Input('category-dropdown3', 'value')],
+    [State('results-store3', 'data')]
+)
+def update_results_dropdown(competition, categories, database):
+    # print("Competition:", competition)
+    # print("Categories:", categories)
+    # print("Database:", database)
+    
+    #category is now a multi-select option
+    #will need to only show the results options that correspond to multi categories
+    if competition and categories:
+        results_options = []
+        #although categories should be a list, sometimes it returns just one
+        #lets make sure it is a list if its not
+        if not isinstance(categories, list):
+            categories = [categories]
+            
+        for category in categories:
+            # print(f"category: {category}")
+            # Get the available results options from the database dictionary
+            options = database['overview'][competition][category] 
+            results_options.append(options)
+        #now, only keep the options that show up for all categories
+        # print(f"result_options: {results_options}")
+        # Create options for the results dropdown
+        
+    
+        def find_common_elements(list_of_lists):
+            # Convert each sublist to a set
+            sets = [set(sublist) for sublist in list_of_lists]
+            
+            # Find the intersection of all sets
+            common_elements = set.intersection(*sets)
+            
+            # Convert the result back to a list
+            return sorted(common_elements)
+        
+        common_elements = find_common_elements(results_options)
+        # print(common_elements)
+                
+        
+        return [{'label': result, 'value': result} for result in common_elements + ["average","best"]]
+    else:
+        return []
+
+# Define callback to set the value of the results dropdown to the first option when the competition or category changes
+@app.callback(
+    Output('results-dropdown3', 'value'),
+    [Input('competition-dropdown3', 'value'),
+     Input('category-dropdown3', 'value')],
+    [State('results-dropdown3', 'options')]
+)
+def set_results_dropdown_value(competition, category, options):
+    if options:
+        return options[0]['value']
+    else:
+        return None
+
+# Define callback to update the options of the category dropdown based on the selected competition
+@app.callback(
+    Output('category-dropdown3', 'options'),
+    [Input('competition-dropdown3', 'value')],
+    [State('results-store3', 'data')]
+)
+def update_category_dropdown(competition, database):
+    if competition:
+        category_options = database['overview'][competition].keys()
+        # Create options for the results dropdown
+        return [{'label': database['category_acronyms'][category], 'value': category} for category in category_options]
+    else:
+        return []
+
+# Define callback to set the value of the category dropdown to the first option when the competition changes
+@app.callback(
+    Output('category-dropdown3', 'value'),
+    [Input('competition-dropdown3', 'value')],
+    [State('category-dropdown3', 'options')]
+)
+def set_category_dropdown_value(competition, options):
+    if options:
+        return options[0]['value']
+    else:
+        return None
+
+
 # Callback to generate tables when the "Calculate" button is clicked
 @app.callback(
     Output('tables-container', 'children'),
     [Input('calculate-button', 'n_clicks')],
-    [State('results-dropdown', 'value'),
-      State('xx-input', 'value'),
-      State('yy-input', 'value'),
-      State('zz-input', 'value'),
-      State('top-x-input', 'value')]
+    [State('competition-dropdown3', 'value'),
+    State('category-dropdown3', 'value'),
+    State('results-dropdown3', 'value'),
+    State('xx-input', 'value'),
+    State('yy-input', 'value'),
+    State('zz-input', 'value'),
+    State('top-x-input', 'value')]
     )
 
-def generate_tables(n_clicks, results_value, xx_value, yy_value, zz_value, num_scenarios):
+def generate_tables(n_clicks, competition, categories, results, xx_value, yy_value, zz_value, num_scenarios):
 
     tables = []
     if n_clicks:
         
         #Here is where we will actually do the team score calculations!
         
-        results_value = dash.callback_context.states['results-dropdown.value']
-        xx_value = dash.callback_context.states['xx-input.value']
-        yy_value = dash.callback_context.states['yy-input.value']
-        zz_value = dash.callback_context.states['zz-input.value']
+        # results_value = dash.callback_context.states['results-dropdown3.value']
+        # xx_value = dash.callback_context.states['xx-input.value']
+        # yy_value = dash.callback_context.states['yy-input.value']
+        # zz_value = dash.callback_context.states['zz-input.value']
         
+        #^ dont think i need this?
         
         
         comp_format = [xx_value,yy_value,zz_value]
         team_size = xx_value
         #get names
-        names = []
-        for name in database:
-            names.append(name)
+        #to do this now, we need to get all those who competed:
+            # at the selected competition
+            # at the selected category
+            # on the selected day
+            
+        
+        elligible_athletes = []
+        for athlete in database:
+            if athlete not in exclude_keys:
+                #check competition
+                if competition in database[athlete].keys():
+                    #check category
+                    if database[athlete][competition]['category'] in categories:
+                        #check if they competed that day
+                        if results in database[athlete][competition].keys():
+                            #then the athlete is elligible
+                            elligible_athletes.append(athlete)
 
         #Here is where we could add the feature to NOT INCLUDE certain gymnasts
         # names.remove('CARROLL Jordan')
         # names.remove('ALLAIRE Dominic')
         
-        all_combos = list(itertools.combinations(names, team_size))
+        all_combos = list(itertools.combinations(elligible_athletes, team_size))
 
         #let's try
         combo_scores = []
         # start_time = time.monotonic()
         for combo in all_combos:
-            team_score = team_score_calcs(comp_format,combo,database,results=results_value,print_table=False)
+            team_score = team_score_calcs(comp_format,combo,database,competition,results=results,print_table=False)
             combo_scores.append(team_score['Team']['AA'])
         # end_time = time.monotonic()
         # time_for_all = timedelta(seconds=end_time - start_time)
@@ -1034,7 +1176,7 @@ def generate_tables(n_clicks, results_value, xx_value, yy_value, zz_value, num_s
             #created table 
             tlas=['FX','PH','SR','VT','PB','HB','AA']
             team = combined[i][1]
-            team_scores = team_score_calcs(comp_format,team,database,results=results_value,print_table=False)
+            team_scores = team_score_calcs(comp_format,team,database,competition,results=results,print_table=False)
             table = []
             
             for athlete in team:
@@ -1079,7 +1221,7 @@ def generate_tables(n_clicks, results_value, xx_value, yy_value, zz_value, num_s
                         row[key] = "{:.3f}".format(value)
             
             table = generate_table(table_data)
-            tables.append(html.Div([html.H3(f'Team Scenario {i+1} using {results_value} results and {xx_value}-{yy_value}-{zz_value} competition format: {table_data[-1]["AA"]}'), table]))  # Add a heading for each table
+            tables.append(html.Div([html.H3(f'Team Scenario {i+1} using {results} results and {xx_value}-{yy_value}-{zz_value} competition format: {table_data[-1]["AA"]}'), table]))  # Add a heading for each table
             
             #rest clicks to get calculate button back
             # reset_n_clicks(n_clicks)
