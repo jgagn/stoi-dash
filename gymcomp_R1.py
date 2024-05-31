@@ -884,11 +884,6 @@ def generate_table(data):
         style_table={'overflowX': 'auto'},  # Enable horizontal scroll if content overflows
     )
 
-#TO DO
-#need to add competition selection
-#need to add category selection (multi-select)
-
-
 tab3_layout = html.Div([
     html.H3('Select Data for Top Team Scores Calculations'),
     dbc.Row([
@@ -918,18 +913,6 @@ tab3_layout = html.Div([
         ], width=6),
     ]),
     dcc.Store(id='results-store3', data=database),  # Store the database - needed to dynamically change data in dropdown menus
-    # html.Label('Results:'),
-    # dcc.Dropdown(
-    #     id='results-dropdown',
-    #     options=[
-    #         {'label': 'Day 1', 'value': 'day1'},
-    #         {'label': 'Day 2', 'value': 'day2'},
-    #         {'label': 'Average', 'value': 'average'},
-    #         {'label': 'Best', 'value': 'best'}
-    #     ],
-    #     value='day1',
-    #     style={'width': '200px'}  # Adjust width here
-    # ),
     html.H3('Select Competition Format'),
     html.Div("Competition Format:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
     
@@ -949,42 +932,9 @@ tab3_layout = html.Div([
     
     html.Button('Calculate', id='calculate-button', n_clicks=0, style={'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'green', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'}),
     
-    # html.Div(id='progress-container', children=[
-    #     dcc.Interval(id='progress-interval', interval=1000, disabled=True),
-    #     html.Progress(id='progress-bar', value=0, max=100),
-    # ]),
-    
     # Placeholder for tables that will be updated based on filters
     html.Div(id='tables-container')
 ])
-
-#progress bar stuff to test it out
-
-
-
-# @app.callback(
-#     Output('progress-container', 'children'),
-#     Output('progress-interval', 'disabled'),
-#     Input('start-button', 'n_clicks')
-# )
-# def start_progress(n_clicks):
-#     if n_clicks:
-#         return html.Div([
-#             dcc.Interval(id='progress-interval', interval=1000, disabled=False),
-#             html.Progress(id='progress-bar', value='0', max='100'),
-#         ]), False
-#     return [], True
-
-# @app.callback(
-#     Output('progress-bar', 'value'),
-#     Input('progress-interval', 'n_intervals')
-# )
-# def update_progress(n_intervals):
-#     if n_intervals is None:
-#         return '0'  # Default progress value
-#     if n_intervals >= 10:  # Update progress bar for 10 seconds (adjust as needed)
-#         return '100'
-#     return str((n_intervals + 1) * 10)  # Increment the progress bar value
 
 
 
@@ -1095,25 +1045,10 @@ def generate_tables(n_clicks, competition, categories, results, xx_value, yy_val
     tables = []
     if n_clicks:
         
-        #Here is where we will actually do the team score calculations!
-        
-        # results_value = dash.callback_context.states['results-dropdown3.value']
-        # xx_value = dash.callback_context.states['xx-input.value']
-        # yy_value = dash.callback_context.states['yy-input.value']
-        # zz_value = dash.callback_context.states['zz-input.value']
-        
-        #^ dont think i need this?
-        
-        
+
         comp_format = [xx_value,yy_value,zz_value]
         team_size = xx_value
-        #get names
-        #to do this now, we need to get all those who competed:
-            # at the selected competition
-            # at the selected category
-            # on the selected day
-            
-        
+
         elligible_athletes = []
         for athlete in database:
             if athlete not in exclude_keys:
