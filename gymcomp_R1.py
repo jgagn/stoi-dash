@@ -939,7 +939,7 @@ tab3_layout = html.Div([
         dcc.Input(id='yy-input', type='number', min=1, max=6, value=4, style={'width': '50px',  'fontSize': '16px'}),
         html.Label('-', style={'padding': '0 5px'}),  # Added label with padding
         dcc.Input(id='zz-input', type='number', min=1, max=6, value=3, style={'width': '50px', 'fontSize': '16px'}),
-        html.Div("(Team Size - Competitors per Apparatus - Counting Scores per Apparatus):", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
+        html.Div("(Team Size - Competitors per Apparatus - Counting Scores per Apparatus)", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
     ]),
     
     html.Label('Show Top', style={'margin-top': '10px'}),  # Added label for the top X team scenarios
@@ -947,60 +947,46 @@ tab3_layout = html.Div([
     html.Label('team scenarios', style={'margin-left': '5px', 'margin-top': '10px'}),  # Added label for team scenario
     
     
-    # html.Div(id="buttons-container", children=[
-    #     html.Button('Calculate', id='calculate-button', n_clicks=0, style={'display': 'block', 'width': '150px', 'height': '40px', 'background-color': 'green', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'}),
-    #     html.Button('Calculating...', id='loading-button', disabled=True, style={'display': 'none', 'width': '150px', 'height': '40px', 'background-color': 'gray', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'}),
-    # ]),
-    
     html.Button('Calculate', id='calculate-button', n_clicks=0, style={'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'green', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'}),
     
-    # # Loading button widget
-    # dcc.Loading(
-    #     id="loading-calculate",
-    #     type="default",
-    #     children=[
-    #         html.Button('Calculating...', id='loading-button', disabled=True, style={'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'gray', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'}),
-    #         html.Div(id="loading-output-calculate")
-    #     ]
-    # ),
-    
-    # html.Button('Calculate', id='calculate-button', n_clicks=0, style={
-    #     'display': 'block',
-    #     'margin-top': '10px',
-    #     'width': '150px',
-    #     'height': '40px',
-    #     'background-color': 'green',
-    #     'color': 'white',
-    #     'border': 'none',
-    #     'border-radius': '5px',
-    #     'fontSize': '20px',
-    #     'box-shadow': '2px 2px 5px rgba(0, 0, 0, 0.2)',  # Add box shadow effect
-    # }),
+    # html.Div(id='progress-container', children=[
+    #     dcc.Interval(id='progress-interval', interval=1000, disabled=True),
+    #     html.Progress(id='progress-bar', value=0, max=100),
+    # ]),
     
     # Placeholder for tables that will be updated based on filters
     html.Div(id='tables-container')
 ])
 
-# Callback to switch between Calculate and Calculating buttons
-# @app.callback(
-#     Output('calculate-button', 'style'),
-#     Output('loading-button', 'style'),
-#     Input('calculate-button', 'n_clicks'),
-#     prevent_initial_call=True
-# )
-# def toggle_buttons(n_clicks):
-#     if n_clicks % 2 == 1:
-#         return {'display': 'none'}, {'display': 'block'}
-#     else:
-#         return {'display': 'block'}, {'display': 'none'}
+#progress bar stuff to test it out
+
+
 
 # @app.callback(
-#     Output('calculate-button', 'n_clicks'),
-#     Input('calculate-button', 'n_clicks'),
-#     prevent_initial_call=True
+#     Output('progress-container', 'children'),
+#     Output('progress-interval', 'disabled'),
+#     Input('start-button', 'n_clicks')
 # )
-# def reset_n_clicks(n_clicks):
-#     return 0
+# def start_progress(n_clicks):
+#     if n_clicks:
+#         return html.Div([
+#             dcc.Interval(id='progress-interval', interval=1000, disabled=False),
+#             html.Progress(id='progress-bar', value='0', max='100'),
+#         ]), False
+#     return [], True
+
+# @app.callback(
+#     Output('progress-bar', 'value'),
+#     Input('progress-interval', 'n_intervals')
+# )
+# def update_progress(n_intervals):
+#     if n_intervals is None:
+#         return '0'  # Default progress value
+#     if n_intervals >= 10:  # Update progress bar for 10 seconds (adjust as needed)
+#         return '100'
+#     return str((n_intervals + 1) * 10)  # Increment the progress bar value
+
+
 
 # Define callback to update the options of the results dropdown based on the selected competition and category
 @app.callback(
@@ -1150,6 +1136,7 @@ def generate_tables(n_clicks, competition, categories, results, xx_value, yy_val
         combo_scores = []
         # start_time = time.monotonic()
         for combo in all_combos:
+            
             team_score = team_score_calcs(comp_format,combo,database,competition,results=results,print_table=False)
             combo_scores.append(team_score['Team']['AA'])
         # end_time = time.monotonic()
