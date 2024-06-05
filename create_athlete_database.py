@@ -226,6 +226,8 @@ for athlete in athletes:
 #two values of interest for each competition:
 # 1: average
 # 2: best
+#now adding a third:
+# 3: combined
 
 # global interest? eventually average of all and best of all... TODO but later
 
@@ -247,16 +249,17 @@ for athlete in athletes:
             
             athlete_database[athlete][comp]['average'] = {}
             athlete_database[athlete][comp]['best'] = {}
-            
+            athlete_database[athlete][comp]['combined'] = {}
             
             for tla in tlas:
                 #query the dataframe to obtain all data
                 athlete_database[athlete][comp]['average'][tla] = {}
                 athlete_database[athlete][comp]['best'][tla] = {}
+                athlete_database[athlete][comp]['combined'][tla] = {}
                 
                 for value in order+[Ename]:#forgot that I was treating E score differently
                     #sweep through all days, do not include category keys
-                    results = [key for key in athlete_database[athlete][comp].keys() if key not in ["category","average","best"]]
+                    results = [key for key in athlete_database[athlete][comp].keys() if key not in ["category","average","best","combined"]]
                     
                     vals = []
                     
@@ -277,12 +280,15 @@ for athlete in athletes:
                     # Check if all values are NaN
                     
                     if np.all(np.isnan(vals)):
-                        #if they are all nans, set to zero...
-                        athlete_database[athlete][comp]['average'][tla][value] = 0.0
-                        athlete_database[athlete][comp]['best'][tla][value] = 0.0
+                        #if they are all nans, set to zero... #TODO test if id rather them be nans?
+                        athlete_database[athlete][comp]['average'][tla][value] = np.nan
+                        athlete_database[athlete][comp]['best'][tla][value] = np.nan
+                        athlete_database[athlete][comp]['combined'][tla][value] = np.nan
+                        
                     else:
                         athlete_database[athlete][comp]['average'][tla][value] = np.nanmean(vals)
                         athlete_database[athlete][comp]['best'][tla][value] = np.nanmax(vals)
+                        athlete_database[athlete][comp]['combined'][tla][value] = np.nansum(vals)
 
         else:
             print(f"{athlete} did not compete at {comp}")

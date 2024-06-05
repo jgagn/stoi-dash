@@ -391,7 +391,7 @@ def update_results_dropdown(competition, categories, database):
         # print(common_elements)
                 
         
-        return [{'label': result, 'value': result} for result in common_elements + ["average","best"]]
+        return [{'label': result, 'value': result} for result in common_elements + ["average","best","combined"]]
     else:
         return []
 
@@ -589,7 +589,7 @@ def generate_subplot(athlete):
         comp_days_date = []
         # i = 0 #temporary date counter
         for comp in competitions:
-            results = [key for key in database[athlete][comp].keys() if key not in ["category", "average", "best"]]
+            results = [key for key in database[athlete][comp].keys() if key not in ["category", "average", "best","combined"]]
             for day in results:
                 date = database['competition_dates'][comp]
                 comp_days_date.append([comp,day,date])
@@ -607,6 +607,7 @@ def generate_subplot(athlete):
         # print(comp_days_date_sorted)
         
         scores = {}
+        categories = []
         comp_labels = []
         for tla in tlas:
             tla_data = []
@@ -614,10 +615,12 @@ def generate_subplot(athlete):
                 # print(f"comp: {comp}, day: {day}, date: {date}")
                 comp_labels.append(comp+" ("+day+")")
                 score = database[athlete][comp][day][tla]['Score']
+                categories.append(database[athlete][comp]['category'])
                 if score == 0:
                     score = np.nan #set to nan
                 tla_data.append(score)
             scores[tla] = tla_data
+            
     
         # Create traces for each TLA
         traces = []
@@ -630,8 +633,10 @@ def generate_subplot(athlete):
                 y=scores[tla],
                 mode='lines+markers+text',
                 name=tla,
-                hoverinfo='text',  # Set hover info to only display text
+                hoverinfo='text',  # Set hover info to only display text,
+                hovertext=[f"{database['category_acronyms'][category]}" for category in categories],
                 text=[f"{score}" for score in scores[tla]],
+                # text=
                 textposition=['top center' if score - min_score < score_range * 0.5 else 'bottom center' for score in scores[tla]]  # Adjust textposition based on y-axis position
                 # name=None,
             )
@@ -781,8 +786,10 @@ def update_score_graph(athlete, competition, results):
             for app in plot_apparatus:
                 d_scores.append(database[athlete][competition][result][app]['D'])
                 e_scores.append(database[athlete][competition][result][app]['E'])
-                max_score = 16 #max(max_score, max(athlete[day][app]['Score'])) #+athlete[day][app]['E'])) #, athlete[day][app]['E']))
-            
+                # max_score = 16 #max(max_score, max(database[athlete][competition][result][app]['Score'])) #+athlete[day][app]['E'])) #, athlete[day][app]['E']))
+                score = database[athlete][competition][result][app]['Score']
+                if score > max_score:
+                    max_score = score
             # print(barplot_colours['D'][day])
             
             # Create stacked bar trace for D and E scores
@@ -825,6 +832,7 @@ def update_score_graph(athlete, competition, results):
             
             traces.append(stacked_trace_d)
             traces.append(stacked_trace_e)
+            
             
             # Increment the offset multiplier for the next day
             offset_multiplier += width # Adjust the multiplier as needed to prevent overlapping bars
@@ -992,7 +1000,7 @@ def update_results_dropdown(competition, categories, database):
         # print(common_elements)
                 
         
-        return [{'label': result, 'value': result} for result in common_elements + ["average","best"]]
+        return [{'label': result, 'value': result} for result in common_elements + ["average","best","combined"]]
     else:
         return []
 
