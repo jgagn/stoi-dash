@@ -46,7 +46,7 @@ competition_acronyms = {"EC2024": "Elite Canada 2024",
 category_acronyms = {"SR21":"Senior (21+)",
                      "SRNG": "Senior (NextGen)",
                      "JR17": "Junior (17-18)",
-                     "JR15": "Junior (15-16)",
+                     "JR15": "Junior (14-16)",
                      "Aspire": "Aspire",
                      }
 competition_dates = {"EC2024": "2024-02-18",

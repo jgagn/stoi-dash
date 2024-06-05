@@ -46,6 +46,9 @@ from collections import OrderedDict
 
 #date time to sort competitions
 from datetime import datetime
+
+#time for debugging some progress bar stuff
+import time
 #%% Import Data 
 #use absolute path
 
@@ -863,15 +866,17 @@ def update_subplot(athlete):
 #############################
 
 # Sample data for demonstration
-team_score_dummy = [
-    {'Athlete': 'VANOUNOU Liam', 'FX': 12.475, 'PH': 12.025, 'SR': 12.125, 'VT': 12.900500000000001, 'PB': 12.45, 'HB': 11.8, 'Total': 73.7755},
-    {'Athlete': 'GONZALEZ Aiden', 'FX': 12.725, 'PH': 11.625, 'SR': 11.8, 'VT': 12.466999999999999, 'PB': 11.274999999999999, 'HB': 12.925, 'Total': 72.81700000000001},
-    {'Athlete': 'HUBER Evan', 'FX': 12.725, 'PH': 10.4, 'SR': 12.4, 'VT': 13.767, 'PB': 12.425, 'HB': 12.075, 'Total': 73.792},
-    {'Athlete': 'MADORE Raphael', 'FX': 13.075, 'PH': 10.1, 'SR': 12.524999999999999, 'VT': 13.9505, 'PB': 12.625, 'HB': 11.875, 'Total': 74.1505},
-    {'Athlete': 'CARROLL Jordan', 'FX': 0.0, 'PH': 13.625, 'SR': 0.0, 'VT': 0.0, 'PB': 0.0, 'HB': 0.0, 'Total': 13.625},
-    {'Athlete': 'Team', 'FX': 38.525, 'PH': 37.275, 'SR': 37.05, 'VT': 40.618, 'PB': 37.5, 'HB': 36.875, 'Total': 227.843}
-]
+# team_score_dummy = [
+#     {'Athlete': 'VANOUNOU Liam', 'FX': 12.475, 'PH': 12.025, 'SR': 12.125, 'VT': 12.900500000000001, 'PB': 12.45, 'HB': 11.8, 'Total': 73.7755},
+#     {'Athlete': 'GONZALEZ Aiden', 'FX': 12.725, 'PH': 11.625, 'SR': 11.8, 'VT': 12.466999999999999, 'PB': 11.274999999999999, 'HB': 12.925, 'Total': 72.81700000000001},
+#     {'Athlete': 'HUBER Evan', 'FX': 12.725, 'PH': 10.4, 'SR': 12.4, 'VT': 13.767, 'PB': 12.425, 'HB': 12.075, 'Total': 73.792},
+#     {'Athlete': 'MADORE Raphael', 'FX': 13.075, 'PH': 10.1, 'SR': 12.524999999999999, 'VT': 13.9505, 'PB': 12.625, 'HB': 11.875, 'Total': 74.1505},
+#     {'Athlete': 'CARROLL Jordan', 'FX': 0.0, 'PH': 13.625, 'SR': 0.0, 'VT': 0.0, 'PB': 0.0, 'HB': 0.0, 'Total': 13.625},
+#     {'Athlete': 'Team', 'FX': 38.525, 'PH': 37.275, 'SR': 37.05, 'VT': 40.618, 'PB': 37.5, 'HB': 36.875, 'Total': 227.843}
+# ]
 
+
+#TODO: if number of athletes in a category < format needs, return some error.
 
 # Header for the table
 header = ['Athlete', 'FX', 'PH', 'SR', 'VT', 'PB', 'HB', 'AA']
@@ -931,6 +936,10 @@ tab3_layout = html.Div([
     
     
     html.Button('Calculate', id='calculate-button', n_clicks=0, style={'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'green', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'}),
+    
+    html.Div(id='progress-container'),
+    dcc.Interval(id='progress-interval', interval=500, n_intervals=0,disabled=True),  # 500 ms interval for progress updates
+    
     
     # Placeholder for tables that will be updated based on filters
     html.Div(id='tables-container')
@@ -1026,10 +1035,37 @@ def set_category_dropdown_value(competition, options):
     else:
         return None
 
+# Progress bar callbacks
+
+# Global variables to track the progress
+calculating = False
+progress = 0
+
+# @app.callback(
+#     Output('progress-container', 'children'),
+#     Output('progress-interval', 'disabled'),
+#     [Input('progress-interval', 'n_intervals')],
+#     [State('calculate-button', 'n_clicks')]
+# )
+# def update_progress(n_intervals, n_clicks):
+#     global progress, calculating
+#     if n_clicks == 0 or not calculating:
+#         return "", True
+
+#     print(f"Progress: {progress}%")  # Debug print for progress
+#     if progress >= 100:
+#         calculating = False
+#         return dbc.Progress(value=progress, striped=True, animated=True, style={'margin-top': '20px'}), True
+
+#     progress_bar = dbc.Progress(value=progress, striped=True, animated=True, style={'margin-top': '20px'})
+#     return progress_bar, False
+
+
 
 # Callback to generate tables when the "Calculate" button is clicked
 @app.callback(
     Output('tables-container', 'children'),
+    # Output('progress-interval', 'disabled'),
     [Input('calculate-button', 'n_clicks')],
     [State('competition-dropdown3', 'value'),
     State('category-dropdown3', 'value'),
@@ -1041,11 +1077,16 @@ def set_category_dropdown_value(competition, options):
     )
 
 def generate_tables(n_clicks, competition, categories, results, xx_value, yy_value, zz_value, num_scenarios):
-
+    #adding progress bar code
+    global progress, calculating
+    
     tables = []
     if n_clicks:
+        #start with progress = 0
+        progress = 0
+        #change calculating variable to true
+        calculating = True
         
-
         comp_format = [xx_value,yy_value,zz_value]
         team_size = xx_value
 
@@ -1070,10 +1111,18 @@ def generate_tables(n_clicks, competition, categories, results, xx_value, yy_val
         #let's try
         combo_scores = []
         # start_time = time.monotonic()
-        for combo in all_combos:
+        
+        #get all combos length for progress calcs
+        total_combos = len(all_combos)
+        for idx, combo in enumerate(all_combos):
             
             team_score = team_score_calcs(comp_format,combo,database,competition,results=results,print_table=False)
             combo_scores.append(team_score['Team']['AA'])
+            
+            #update progress bar data
+            progress = int((idx + 1) / total_combos * 100)
+            # time.sleep(0.1)  # Simulate time-consuming calculations
+            
         # end_time = time.monotonic()
         # time_for_all = timedelta(seconds=end_time - start_time)
         # print(f"Time for all: {time_for_all}")
@@ -1089,8 +1138,9 @@ def generate_tables(n_clicks, competition, categories, results, xx_value, yy_val
                        "dropped":"black",
                        "counting":"white"}
         
+        
         for i in range(num_scenarios):
-            
+            print(f"post-processing: {i+1}/{num_scenarios}")
             # team = combined[0][1]
             
             # new_team_scores = team_score_calcs(comp_format,team,database,print_table=False)
@@ -1098,6 +1148,7 @@ def generate_tables(n_clicks, competition, categories, results, xx_value, yy_val
             #created table 
             tlas=['FX','PH','SR','VT','PB','HB','AA']
             team = combined[i][1]
+            
             team_scores = team_score_calcs(comp_format,team,database,competition,results=results,print_table=False)
             table = []
             
@@ -1147,8 +1198,11 @@ def generate_tables(n_clicks, competition, categories, results, xx_value, yy_val
             
             #rest clicks to get calculate button back
             # reset_n_clicks(n_clicks)
-
-    return tables
+        
+    progress = 100  # Ensure progress is set to 100% when done
+    calculating = False #no longer calculating
+    
+    return tables #, True
 
 #%% Combining 3 Tabs
 app.layout = html.Div([
