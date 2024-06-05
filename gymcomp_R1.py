@@ -711,7 +711,7 @@ def generate_subplot(athlete):
         fig.update_layout(
             title=f'{athlete} Competition Scores',
             # xaxis=dict(title='Competitions'),
-            width=1000,
+            # width=1000,
             height=800,
             showlegend=False,
             margin=dict(l=40, r=40, t=40, b=40)  # Adjust the margins as needed
@@ -726,8 +726,33 @@ def generate_subplot(athlete):
             fig.update_xaxes(showticklabels=True, row=i, col=1)
             fig.update_yaxes(title=tlas[i-1], row=i, col=1)
     else:
-        # print("no athlete")
-        pass
+        fig.update_layout(
+            title=f'Select an Athlete to see their Competition Scores',
+            # xaxis=dict(title='Competitions'),
+            # width=1000,
+            height=800,
+            showlegend=False,
+            margin=dict(l=40, r=40, t=40, b=40)  # Adjust the margins as needed
+        )
+        # Remove the x-axis title for the first subplot
+        fig.update_xaxes(title='', row=1, col=1)
+        # fig.update_xaxes(title='Competitions', row=7, col=1)
+        
+        # Create traces for each TLA
+        traces = []
+        for tla in tlas:
+            trace = go.Scatter()
+            traces.append(trace)
+    
+        # Add traces to subplot
+        for i, trace in enumerate(traces): 
+            fig.add_trace(trace, row=i + 1, col=1)
+        
+        
+        # add x-axis and y axis labels 
+        for i in range(1, 8):
+            fig.update_xaxes(showticklabels=False, row=i, col=1)
+            fig.update_yaxes(title=tlas[i-1], row=i, col=1)
             
     return fig
 
@@ -750,7 +775,7 @@ tab2_layout = html.Div([
     # Subplot will be added here based on athlete dropdown selection change
     dcc.Graph(id='subplot'),
     
-    html.H3('Score Breakdown by Competition'),
+    html.H3('Score Breakdown by Competition: Select a Specific Competition and Results to View'),
     html.Div([
         html.Div("Competition", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
         dcc.Dropdown(
@@ -770,7 +795,7 @@ tab2_layout = html.Div([
         )
     ]),
     dcc.Store(id='results-store2', data=database),  # Store the database - needed to dynamically change data in dropdown menus
-    dcc.Graph(id='score-graph', style={'width': '1000px', 'height': '400px'}),
+    dcc.Graph(id='score-graph'), #, style={'width': '1000px', 'height': '400px'}),
     
 ])
 
@@ -903,7 +928,7 @@ def update_score_graph(athlete, competition, results):
         xaxis={'title': 'Apparatus'},
         yaxis={'title': 'Score', 'range': [0, max_score * 1.1]},
         barmode='relative',  # Relative bars for stacked and grouped
-        width=1000,
+        # width=1000,
         height=400
         )
     
@@ -967,14 +992,14 @@ tab3_layout = html.Div([
                 id='competition-dropdown3',
                 options=[{'label': database['competition_acronyms'][comp], 'value': comp} for comp in database['overview'].keys()],
                 value=list(next(iter(database.values())).keys())[0],
-                style=dropdown_style
+                style=dropdown_style1
             ),
         ], width=6),
         dbc.Col([
             html.Div("Category (can select more than 1):", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
             dcc.Dropdown(
                 id='category-dropdown3',
-                style=dropdown_style,
+                style=dropdown_style1,
                 multi=True  # Enable multi-select
             ),
         ], width=6),
@@ -982,7 +1007,7 @@ tab3_layout = html.Div([
             html.Div("Results:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
             dcc.Dropdown(
                 id='results-dropdown3',
-                style=dropdown_style
+                style=dropdown_style1
             ),
         ], width=6),
     ]),
