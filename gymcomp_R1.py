@@ -100,6 +100,7 @@ app.title = "STOI Demo"
 
 #I want to make the drop down selectors take up less width
 dropdown_style = {'width': '50%'}  # Adjust the width as needed
+dropdown_style1 = {'width': '100%'}  # Adjust the width as needed
 tlas = ['FX', 'PH', 'SR', 'VT', 'PB', 'HB', 'AA']
 exclude_keys = ["overview", "competition_acronyms", "category_acronyms","competition_dates"]
 
@@ -293,57 +294,114 @@ def update_table(database, competition, categories, results, apparatus, selected
 
 overview_layout = html.Div([
     html.H3('Competition Data Selection'),
+    # dbc.Row([
+    #     dbc.Col([
+    #         html.Div("Competition", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
+    #         dcc.Dropdown(
+    #             id='competition-dropdown',
+    #             options=[{'label': database['competition_acronyms'][comp], 'value': comp} for comp in database['overview'].keys()],
+    #             value=list(next(iter(database.values())).keys())[0],
+    #             style=dropdown_style
+    #         ),
+    #     ], width=6),
+    #     dbc.Col([
+    #         html.Div("Category (can select more than 1):", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
+    #         dcc.Dropdown(
+    #             id='category-dropdown',
+    #             style=dropdown_style,
+    #             multi=True  # Enable multi-select
+    #         ),
+    #     ], width=6),
+    #     dbc.Col([
+    #         html.Div("Results:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
+    #         dcc.Dropdown(
+    #             id='results-dropdown',
+    #             style=dropdown_style
+    #         ),
+    #     ], width=6),
+    #     dbc.Col([
+    #         html.Div("Apparatus:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
+    #         dcc.Dropdown(
+    #             id='apparatus-dropdown',
+    #             options=[{'label': app, 'value': app} for app in ["FX", "PH", "SR", "VT", "PB", "HB", "AA"]],
+    #             value='AA',
+    #             style=dropdown_style
+    #         ),
+    #     ], width=6)
+    # ]),
+    
     dbc.Row([
         dbc.Col([
-            html.Div("Competition", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
-            dcc.Dropdown(
-                id='competition-dropdown',
-                options=[{'label': database['competition_acronyms'][comp], 'value': comp} for comp in database['overview'].keys()],
-                value=list(next(iter(database.values())).keys())[0],
-                style=dropdown_style
-            ),
-        ], width=6),
+            html.Div([
+                html.Div([
+                    html.Div("Competition", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
+                    dcc.Dropdown(
+                        id='competition-dropdown',
+                        options=[{'label': database['competition_acronyms'][comp], 'value': comp} for comp in database['overview'].keys()],
+                        value=list(next(iter(database.values())).keys())[0],
+                        style=dropdown_style1
+                    )
+                ], style={'marginBottom': '10px'}),
+                html.Div([
+                    html.Div("Category (can select more than 1):", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
+                    dcc.Dropdown(
+                        id='category-dropdown',
+                        style=dropdown_style1,
+                        multi=True  # Enable multi-select
+                    )
+                ], style={'marginBottom': '10px'}),
+                html.Div([
+                    html.Div("Results:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
+                    dcc.Dropdown(
+                        id='results-dropdown',
+                        style=dropdown_style1
+                    )
+                ], style={'marginBottom': '10px'}),
+                html.Div([
+                    html.Div("Apparatus:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
+                    dcc.Dropdown(
+                        id='apparatus-dropdown',
+                        options=[{'label': app, 'value': app} for app in ["FX", "PH", "SR", "VT", "PB", "HB", "AA"]],
+                        value='AA',
+                        style=dropdown_style1
+                    )
+                ], style={'marginBottom': '10px'})
+            ])
+        ], style={'flex': '0 0 40%'}),  # Adjust width as needed
+
         dbc.Col([
-            html.Div("Category (can select more than 1):", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
-            dcc.Dropdown(
-                id='category-dropdown',
-                style=dropdown_style,
-                multi=True  # Enable multi-select
-            ),
-        ], width=6),
-        dbc.Col([
-            html.Div("Results:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
-            dcc.Dropdown(
-                id='results-dropdown',
-                style=dropdown_style
-            ),
-        ], width=6),
-        dbc.Col([
-            html.Div("Apparatus:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
-            dcc.Dropdown(
-                id='apparatus-dropdown',
-                options=[{'label': app, 'value': app} for app in ["FX", "PH", "SR", "VT", "PB", "HB", "AA"]],
-                value='AA',
-                style=dropdown_style
-            ),
-        ], width=6)
-    ]),
+            html.Div([
+                html.P("Number of Athletes: 50"),
+                html.P("Top Score: 98.5"),
+                html.P("Top D Score: 6.2"),
+                html.P("Top E Score: 9.1"),
+            ], style={'paddingLeft': '20px'}) #removed border code, 'borderLeft': '1px solid #ccc'})  # Adjust padding and add a border for separation
+        ], style={'flex': '0 0 60%'})  # Adjust width as needed
+    ], style={'display': 'flex', 'alignItems': 'flex-start'}),
+    
+    
     dcc.Store(id='results-store', data=database),  # Store the database - needed to dynamically change data in dropdown menus
     
     
-    dbc.Row([
+    dbc.Container([
         html.H3('Interactive Bubble Plot'),
-        dbc.Col(
-            dcc.Graph(id='bubble-plot'),
-            width=6
-        ),
+        dbc.Row([
+            dbc.Col(
+                dcc.Graph(id='bubble-plot', config={'responsive': True}),
+                style={'flex': '0 0 80%'},  # Adjust width as needed
+            )
+        ], style={'display': 'flex'}),
         html.H3("Data Table"),
-        
-        dbc.Col(
-            html.Div(id='table-container'),
-            width=6
-        )
-    ])
+        dbc.Row([
+            dbc.Col(
+                html.Div(id='table-container'),
+                style={'flex': '0 0 100%'},  # Adjust width as needed
+            )
+        ], style={'display': 'flex'})
+    ], style={'boxSizing': 'border-box', 'position': 'relative', 'width': '100%', 'height': '0', 'paddingBottom': '60%'})
+
+
+    
 ])
 
 # Define callback to update the options of the results dropdown based on the selected competition and category
@@ -482,8 +540,11 @@ def update_plot_and_table(results, apparatus, categories, competition, clickData
                       yaxis_title="D score", 
                       autosize=True,
                       margin=dict(l=40, r=40, t=40, b=40),
-                      width=1000, #play with this value until you like it
+                      # width=1000, #play with this value until you like it
                       height=600,
+                      # width='100%',  # Set width to 100% for responsiveness
+                      # aspectratio=dict(x=3, y=2)  # Set aspect ratio (3:2)
+                      
                       )
     fig.update_traces(text=data['score'], textposition='top center')  
 

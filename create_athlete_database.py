@@ -281,9 +281,10 @@ for athlete in athletes:
                     
                     if np.all(np.isnan(vals)):
                         #if they are all nans, set to zero... #TODO test if id rather them be nans?
-                        athlete_database[athlete][comp]['average'][tla][value] = np.nan
-                        athlete_database[athlete][comp]['best'][tla][value] = np.nan
-                        athlete_database[athlete][comp]['combined'][tla][value] = np.nan
+                        #it messes up my D vs. E score plot unfortunately right now
+                        athlete_database[athlete][comp]['average'][tla][value] = 0.0
+                        athlete_database[athlete][comp]['best'][tla][value] = 0.0
+                        athlete_database[athlete][comp]['combined'][tla][value] = 0.0
                         
                     else:
                         athlete_database[athlete][comp]['average'][tla][value] = np.nanmean(vals)
