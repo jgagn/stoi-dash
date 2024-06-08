@@ -959,18 +959,7 @@ def update_subplot(athlete):
 #%% Tab 3: Team Scenarios ###
 #############################
 
-# Sample data for demonstration
-# team_score_dummy = [
-#     {'Athlete': 'VANOUNOU Liam', 'FX': 12.475, 'PH': 12.025, 'SR': 12.125, 'VT': 12.900500000000001, 'PB': 12.45, 'HB': 11.8, 'Total': 73.7755},
-#     {'Athlete': 'GONZALEZ Aiden', 'FX': 12.725, 'PH': 11.625, 'SR': 11.8, 'VT': 12.466999999999999, 'PB': 11.274999999999999, 'HB': 12.925, 'Total': 72.81700000000001},
-#     {'Athlete': 'HUBER Evan', 'FX': 12.725, 'PH': 10.4, 'SR': 12.4, 'VT': 13.767, 'PB': 12.425, 'HB': 12.075, 'Total': 73.792},
-#     {'Athlete': 'MADORE Raphael', 'FX': 13.075, 'PH': 10.1, 'SR': 12.524999999999999, 'VT': 13.9505, 'PB': 12.625, 'HB': 11.875, 'Total': 74.1505},
-#     {'Athlete': 'CARROLL Jordan', 'FX': 0.0, 'PH': 13.625, 'SR': 0.0, 'VT': 0.0, 'PB': 0.0, 'HB': 0.0, 'Total': 13.625},
-#     {'Athlete': 'Team', 'FX': 38.525, 'PH': 37.275, 'SR': 37.05, 'VT': 40.618, 'PB': 37.5, 'HB': 36.875, 'Total': 227.843}
-# ]
-
-
-#TODO: if number of athletes in a category < format needs, return some error.
+#TODO: if number of athletes in a category < format needs or scenarios avaialble for that format, return some error.
 
 # Header for the table
 header = ['Athlete', 'FX', 'PH', 'SR', 'VT', 'PB', 'HB', 'AA']
@@ -1158,7 +1147,9 @@ progress = 0
 
 # Callback to generate tables when the "Calculate" button is clicked
 @app.callback(
-    Output('tables-container', 'children'),
+    [Output('tables-container', 'children'),
+    Output('calculate-button', 'style'),
+    Output('calculate-button', 'children')],
     # Output('progress-interval', 'disabled'),
     [Input('calculate-button', 'n_clicks')],
     [State('competition-dropdown3', 'value'),
@@ -1296,8 +1287,24 @@ def generate_tables(n_clicks, competition, categories, results, xx_value, yy_val
     progress = 100  # Ensure progress is set to 100% when done
     calculating = False #no longer calculating
     
-    return tables #, True
+    #We need to return the calculate button back
+    button_style = {'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'green', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'} 
+    button_text =  'Calculate'
+    return tables,button_style,button_text #, True
 
+# Callback to change button color when clicked
+@app.callback(
+    [Output('calculate-button', 'style'),
+     Output('calculate-button', 'children')],
+    [Input('calculate-button', 'n_clicks')],
+    prevent_initial_call=True
+)
+def change_button_color(n_clicks):
+    if n_clicks:
+        return {'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'red', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'},'Calculating...'
+    else:
+        return {'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'green', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'},'Calculate'
+    
 #%% Combining 3 Tabs
 app.layout = html.Div([
     dcc.Tabs(id='tabs-example', value='tab-1', children=[
