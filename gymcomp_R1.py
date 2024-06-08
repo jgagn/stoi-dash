@@ -1024,17 +1024,6 @@ tab3_layout = html.Div([
     dcc.Interval(id='progress-interval', interval=500, n_intervals=0,disabled=True),  # 500 ms interval for progress updates
     
     
-    # Placeholder for tables that will be updated based on filters
-    # html.Div(id='tables-container')
-    
-    #Wrap the tables-container within a loading component should allow for loading feature
-    # dcc.Loading(
-    #     id="loading-spinner",
-    #     # type="circle",
-    #     type='default',
-    #     children=html.Div(id='tables-container')
-    # )
-    
     # Container for the progress spinner and tables- add CSS formating to make sure the spinner/loading element is at the top of the table
     html.Div(id='progress-tables-container', children=[
         dcc.Loading(
@@ -1043,14 +1032,10 @@ tab3_layout = html.Div([
             type='dot',
             children=[html.Div(id='tables-container')],
             style={'position': 'absolute', 'top': '0', 'left': '50%', 'transform': 'translateX(-50%)'},
-
-
         )
     ], style={'position': 'relative'}),
     
 ])
-
-
 
 # Define callback to update the options of the results dropdown based on the selected competition and category
 @app.callback(
@@ -1145,26 +1130,6 @@ def set_category_dropdown_value(competition, options):
 # Global variables to track the progress
 calculating = False
 progress = 0
-
-# @app.callback(
-#     Output('progress-container', 'children'),
-#     Output('progress-interval', 'disabled'),
-#     [Input('progress-interval', 'n_intervals')],
-#     [State('calculate-button', 'n_clicks')]
-# )
-# def update_progress(n_intervals, n_clicks):
-#     global progress, calculating
-#     if n_clicks == 0 or not calculating:
-#         return "", True
-
-#     print(f"Progress: {progress}%")  # Debug print for progress
-#     if progress >= 100:
-#         calculating = False
-#         return dbc.Progress(value=progress, striped=True, animated=True, style={'margin-top': '20px'}), True
-
-#     progress_bar = dbc.Progress(value=progress, striped=True, animated=True, style={'margin-top': '20px'})
-#     return progress_bar, False
-
 
 
 # Callback to generate tables when the "Calculate" button is clicked
@@ -1314,19 +1279,6 @@ def generate_tables(n_clicks, competition, categories, results, xx_value, yy_val
     button_text =  'Calculate'
     return tables,button_style,button_text #, True
 
-# Callback to change button color when clicked
-# @app.callback(
-#     [Output('calculate-button', 'style'),
-#      Output('calculate-button', 'children')],
-#     [Input('calculate-button', 'n_clicks')],
-#     prevent_initial_call=True
-# )
-# def change_button_color(n_clicks):
-#     if n_clicks:
-#         return {'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'red', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'},'Calculating...'
-#     else:
-#         return {'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'green', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'},'Calculate'
-    
 #%% Combining 3 Tabs
 app.layout = html.Div([
     dcc.Tabs(id='tabs-example', value='tab-1', children=[
