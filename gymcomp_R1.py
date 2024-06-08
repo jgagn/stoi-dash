@@ -961,16 +961,84 @@ def update_subplot(athlete):
 
 #TODO: if number of athletes in a category < format needs or scenarios avaialble for that format, return some error.
 
+# # Header for the table
+# display_header = ['Athlete', 'FX', 'PH', 'SR', 'VT', 'PB', 'HB', 'AA']
+# header = ['Athlete', 'FX', 'FX_status', 'PH', 'PH_status', 'SR', 'SR_status', 'VT', 'VT_status', 'PB', 'PB_status', 'HB', 'HB_status', 'AA']
+
+
+# def generate_table(data):
+#     return dash_table.DataTable(
+#         columns=[{'name': i, 'id': i} for i in header],
+#         data=data,
+#         style_cell={'textAlign': 'center', 'whiteSpace': 'normal', 'height': 'auto'},  # Ensure text wraps within cells
+#         style_table={'overflowX': 'auto'},  # Enable horizontal scroll if content overflows
+#     )
+
+
 # Header for the table
 header = ['Athlete', 'FX', 'PH', 'SR', 'VT', 'PB', 'HB', 'AA']
+# header = ['Athlete', 'FX', 'FX_status', 'PH', 'PH_status', 'SR', 'SR_status', 'VT', 'VT_status', 'PB', 'PB_status', 'HB', 'HB_status', 'AA']
+
+# Define the color dictionary
+colour_dict = {"dropped": "#FFFFCC", "scratch": "grey", "counting": "green"}
+
+# Define hidden columns and conditional formatting based on status
+hidden_columns = [f'{event}_status' for event in ['FX', 'PH', 'SR', 'VT', 'PB', 'HB']]
+style_data_conditional = []
+
+for event in ['FX', 'PH', 'SR', 'VT', 'PB', 'HB']:
+    for status, color in colour_dict.items():
+        style_data_conditional.append(
+            {
+                'if': {
+                    'filter_query': f'{{{event}_status}} = "{status}"',
+                    'column_id': event
+                },
+                'backgroundColor': color,
+                'color': 'white' if color not in ['white',colour_dict['dropped']] else 'black',
+            }
+        )
+
+
+# # Function to generate the table
+# def generate_table(data):
+#     return dash_table.DataTable(
+#         columns=[{'name': i, 'id': i, 'hideable': False} for i in header],
+#         # columns=[{'name': i, 'id': i} for i in header],
+#         data=data,
+#         style_cell={'textAlign': 'center', 'whiteSpace': 'normal', 'height': 'auto'},  # Ensure text wraps within cells
+#         style_table={'overflowX': 'auto'},  # Enable horizontal scroll if content overflows
+#         style_data_conditional=style_data_conditional,
+#         hidden_columns=hidden_columns,
+#         # config={'modeBarButtonsToAdd': []}  # Disable the "toggle columns" option
+#     )
+
+# # Header for the table
+# display_header = ['Athlete', 'FX', 'PH', 'SR', 'VT', 'PB', 'HB', 'AA']
+# header = ['Athlete', 'FX', 'FX_status', 'PH', 'PH_status', 'SR', 'SR_status', 'VT', 'VT_status', 'PB', 'PB_status', 'HB', 'HB_status', 'AA']
+
+# Define which columns will have filtering enabled
+# filterable_columns = ['FX', 'PH', 'SR', 'VT', 'PB', 'HB', 'AA']
+
+# Create a list of column definitions
+# columns = [{'name': i, 'id': i, 'hideable': False} for i in header]
+columns = [{'name': i, 'id': i} for i in header]
+
+# # Enable filtering for filterable columns
+# for col in columns:
+#     if col['id'] in filterable_columns:
+#         col['filter_options'] = {'case': 'sensitive', 'clearable': True, 'className': 'dropdown'}
 
 def generate_table(data):
     return dash_table.DataTable(
-        columns=[{'name': i, 'id': i} for i in header],
+        columns=columns,
         data=data,
         style_cell={'textAlign': 'center', 'whiteSpace': 'normal', 'height': 'auto'},  # Ensure text wraps within cells
         style_table={'overflowX': 'auto'},  # Enable horizontal scroll if content overflows
+        style_data_conditional=style_data_conditional,
+        # hidden_columns=hidden_columns,
     )
+
 
 tab3_layout = html.Div([
     html.H3('Select Data for Top Team Scores Calculations'),
@@ -1205,14 +1273,14 @@ def generate_tables(n_clicks, competition, categories, results, xx_value, yy_val
         combined.sort(key=lambda x:x[0],reverse=True)
         #https://stackoverflow.com/questions/20099669/sort-multidimensional-array-based-on-2nd-element-of-the-subarray
 
-        #colour coding if we want (TODO)
-        colour_dict = {"scratch":"red",
-                       "dropped":"black",
-                       "counting":"white"}
+        # #colour coding if we want (TODO)
+        # colour_dict = {"scratch":"red",
+        #                "dropped":"black",
+        #                "counting":"white"}
         
         
         for i in range(num_scenarios):
-            print(f"post-processing: {i+1}/{num_scenarios}")
+            # print(f"post-processing: {i+1}/{num_scenarios}")
             # team = combined[0][1]
             
             # new_team_scores = team_score_calcs(comp_format,team,database,print_table=False)
@@ -1223,6 +1291,8 @@ def generate_tables(n_clicks, competition, categories, results, xx_value, yy_val
             
             team_scores = team_score_calcs(comp_format,team,database,competition,results=results,print_table=False)
             table = []
+            
+            # print(f"team_scores: {team_scores}")
             
             for athlete in team:
                 new_line = {}
@@ -1237,6 +1307,7 @@ def generate_tables(n_clicks, competition, categories, results, xx_value, yy_val
                     # print(team_scores[athlete][tla])
                     try:
                         new_line[tla]=team_scores[athlete][tla][0]
+                        new_line[tla+"_status"]=team_scores[athlete][tla][1]
                     except:
                         new_line[tla]=team_scores[athlete][tla]
                     # new_line.append(colored(team_scores[athlete][tla][1],colour_dict[team_scores[athlete][tla][1]]))
@@ -1252,6 +1323,8 @@ def generate_tables(n_clicks, competition, categories, results, xx_value, yy_val
             summary_line['Athlete'] = 'Team Total'
             for tla in tlas:
                 summary_line[tla] = np.round(team_scores['Team'][tla],3)
+                if tla != "AA":
+                    summary_line[tla+"_status"] = "N/A"
             table.append(summary_line)
             # print('team scores')
             # print(team_scores)
@@ -1264,6 +1337,8 @@ def generate_tables(n_clicks, competition, categories, results, xx_value, yy_val
                 for key, value in row.items():
                     if isinstance(value, (int, float)):
                         row[key] = "{:.3f}".format(value)
+            
+            print(f"table data: {table_data} ")
             
             table = generate_table(table_data)
             tables.append(html.Div([html.H3(f'Team Scenario {i+1} using {results} results and {xx_value}-{yy_value}-{zz_value} competition format: {table_data[-1]["AA"]}'), table]))  # Add a heading for each table
