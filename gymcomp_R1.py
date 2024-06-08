@@ -1025,7 +1025,29 @@ tab3_layout = html.Div([
     
     
     # Placeholder for tables that will be updated based on filters
-    html.Div(id='tables-container')
+    # html.Div(id='tables-container')
+    
+    #Wrap the tables-container within a loading component should allow for loading feature
+    # dcc.Loading(
+    #     id="loading-spinner",
+    #     # type="circle",
+    #     type='default',
+    #     children=html.Div(id='tables-container')
+    # )
+    
+    # Container for the progress spinner and tables- add CSS formating to make sure the spinner/loading element is at the top of the table
+    html.Div(id='progress-tables-container', children=[
+        dcc.Loading(
+            id='loading-spinner',
+            # type='circle', #options:'graph', 'cube', 'circle', 'dot' or 'default'; 
+            type='dot',
+            children=[html.Div(id='tables-container')],
+            style={'position': 'absolute', 'top': '0', 'left': '50%', 'transform': 'translateX(-50%)'},
+
+
+        )
+    ], style={'position': 'relative'}),
+    
 ])
 
 
@@ -1293,17 +1315,17 @@ def generate_tables(n_clicks, competition, categories, results, xx_value, yy_val
     return tables,button_style,button_text #, True
 
 # Callback to change button color when clicked
-@app.callback(
-    [Output('calculate-button', 'style'),
-     Output('calculate-button', 'children')],
-    [Input('calculate-button', 'n_clicks')],
-    prevent_initial_call=True
-)
-def change_button_color(n_clicks):
-    if n_clicks:
-        return {'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'red', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'},'Calculating...'
-    else:
-        return {'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'green', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'},'Calculate'
+# @app.callback(
+#     [Output('calculate-button', 'style'),
+#      Output('calculate-button', 'children')],
+#     [Input('calculate-button', 'n_clicks')],
+#     prevent_initial_call=True
+# )
+# def change_button_color(n_clicks):
+#     if n_clicks:
+#         return {'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'red', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'},'Calculating...'
+#     else:
+#         return {'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'green', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'},'Calculate'
     
 #%% Combining 3 Tabs
 app.layout = html.Div([
