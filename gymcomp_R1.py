@@ -1037,8 +1037,42 @@ def generate_table(data):
         style_table={'overflowX': 'auto'},  # Enable horizontal scroll if content overflows
         style_data_conditional=style_data_conditional,
         # hidden_columns=hidden_columns,
+        
     )
 
+colour_dict = {"dropped": "#FFFFCC", "scratch": "grey", "counting": "green"}
+
+# Define the legend data
+# legend_data = [
+#     {"Status": "Counting Score", "Description": colour_dict['counting']},
+#     {"Status": "Dropped Score", "Description": colour_dict['dropped']},
+#     {"Status": "Scratch (would not compete)", "Description": colour_dict['scratch']},
+# ]
+
+legend_data = [
+    {"Status": "Counting", "Description": "the athlete competes and the score contributes to the Team Total"},
+    {"Status": "Dropped", "Description": "the athlete competes but the score does not contribute to the Team Total"},
+    {"Status": "Scratch", "Description": "the athlete would not compete and the score would not contribute to the Team Total"},
+]
+
+# Define the text color based on background color
+text_color_dict = {"counting": "white", "dropped": "black", "scratch": "white"}
+
+# Style for the legend table
+style_data_conditional_legend = []
+
+for status, bg_color in colour_dict.items():
+    text_color = text_color_dict[status]
+    style_data_conditional_legend.append(
+        {
+            'if': {
+                'filter_query': f'{{Status}} = "{status.capitalize()}"',
+                'column_id': 'Status'
+            },
+            'backgroundColor': bg_color,
+            'color': text_color,
+        }
+    )
 
 tab3_layout = html.Div([
     html.H3('Select Data for Top Team Scores Calculations'),
@@ -1087,6 +1121,33 @@ tab3_layout = html.Div([
     
     
     html.Button('Calculate', id='calculate-button', n_clicks=0, style={'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'green', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'}),
+    
+    #Legend for table
+    # Legend
+    # html.Div(
+    #     [
+    #         html.Div("Legend:", style={"font-weight": "bold"}),
+    #         html.Div("Counting Score: ", style={"color": colour_dict["counting"]}),
+    #         html.Div("Dropped Score: ", cstyle={"color": colour_dict["dropped"]}),
+    #         html.Div("Scratch (Would not compete in Team Scenario): ", style={"color": colour_dict["scratch"]}),
+    #     ],
+    #     style={"margin-bottom": "20px"},
+    # ),
+
+    # Legend
+    html.Div(
+        [
+            html.H3('Table Legend'),
+            dash_table.DataTable(
+                columns=[{"name": "Status", "id": "Status"}, {"name": "Description", "id": "Description"}],
+                data=legend_data,
+                style_table={"margin-top": "10px"},
+                style_cell={"textAlign": "center", "whiteSpace": "normal", "height": "auto"},
+                style_data_conditional=style_data_conditional_legend,
+            ),
+        ],
+        style={"margin-bottom": "20px"},
+    ),
     
     html.Div(id='progress-container'),
     dcc.Interval(id='progress-interval', interval=500, n_intervals=0,disabled=True),  # 500 ms interval for progress updates
