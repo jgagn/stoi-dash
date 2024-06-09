@@ -1510,8 +1510,8 @@ def render_content(tab):
         return tab3_layout
 
 #%% comment out when pusing to github
-if __name__ == '__main__':
-    app.run_server(debug=True)
+# if __name__ == '__main__':
+#     app.run_server(debug=True)
 
 
 
