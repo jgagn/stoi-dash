@@ -1107,7 +1107,7 @@ tab3_layout = html.Div([
     html.Div("Competition Format:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
     
     html.Div([
-        dcc.Input(id='xx-input', type='number', min=1, max=6, value=5, style={'width': '50px', 'fontSize': '16px'}),
+        dcc.Input(id='xx-input', type='number', min=1, max=16, value=5, style={'width': '50px', 'fontSize': '16px'}),
         html.Label('-', style={'padding': '0 5px'}),  # Added label with padding
         dcc.Input(id='yy-input', type='number', min=1, max=6, value=4, style={'width': '50px',  'fontSize': '16px'}),
         html.Label('-', style={'padding': '0 5px'}),  # Added label with padding
@@ -1148,6 +1148,9 @@ tab3_layout = html.Div([
         ],
         style={"margin-bottom": "20px"},
     ),
+    
+    #Alert container
+    html.Div(id='alert-container'),
     
     html.Div(id='progress-container'),
     dcc.Interval(id='progress-interval', interval=500, n_intervals=0,disabled=True),  # 500 ms interval for progress updates
@@ -1265,7 +1268,8 @@ progress = 0
 @app.callback(
     [Output('tables-container', 'children'),
     Output('calculate-button', 'style'),
-    Output('calculate-button', 'children')],
+    Output('calculate-button', 'children'),
+    Output('alert-container','children')],
     # Output('progress-interval', 'disabled'),
     [Input('calculate-button', 'n_clicks')],
     [State('competition-dropdown3', 'value'),
@@ -1281,12 +1285,45 @@ def generate_tables(n_clicks, competition, categories, results, xx_value, yy_val
     #adding progress bar code
     global progress, calculating
     
+    #We need to return the calculate button back
+    button_style = {'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'green', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'} 
+    button_text =  'Calculate'
+    
+    
+    
+
     tables = []
     if n_clicks:
         #start with progress = 0
         progress = 0
         #change calculating variable to true
         calculating = True
+        
+        #lets check we''ve selected competition, category and results
+        missing = []
+        if not(competition):
+            missing.append('Competition')
+        if not(categories):
+            missing.append('Category')
+        if not(results):
+            missing.append('Results')
+        
+        #if anything is missing, we cannot calculate
+        
+        if missing:
+            missing_text = ', '.join(missing)
+            alert = dbc.Alert(
+                "Missing "+missing_text+" selection above, please select and try again",
+                color="red",
+                dismissable=True,
+                is_open=True,
+                style={'fontSize': '18px'}  # Make the alert text larger
+            )
+            
+            return dash_table.DataTable(),button_style,button_text,alert
+        
+        
+        
         
         comp_format = [xx_value,yy_value,zz_value]
         team_size = xx_value
@@ -1315,6 +1352,42 @@ def generate_tables(n_clicks, competition, categories, results, xx_value, yy_val
         
         #get all combos length for progress calcs
         total_combos = len(all_combos)
+        
+        
+        
+        
+        #Need to check 2 scenarios: 
+        #1: # of athletes vs. team size
+        #2: # of combos vs. # of top scenarios selected
+        
+        #scenario 1 alert
+        num_athletes = len(elligible_athletes)
+        if num_athletes < xx_value:
+            #in this scenario, the team size wont work
+            alert = dbc.Alert(
+                f"Cannot compute: Elligible Athletes ({num_athletes}) is < team size ({xx_value})",
+                color="red",
+                dismissable=True,
+                is_open=True,
+                style={'fontSize': '18px'}  # Make the alert text larger
+            )
+            
+            return dash_table.DataTable(),button_style,button_text,alert
+        
+        #scenario 2 alert
+        if total_combos < num_scenarios:
+
+            alert = dbc.Alert(
+                f"Cannot compute: Total Possible Team Score Combinations ({total_combos}) is < Number of Scenarios Selected to be Shown ({num_scenarios})",
+                color="red",
+                dismissable=True,
+                is_open=True,
+                style={'fontSize': '18px'}  # Make the alert text larger
+            )
+            
+            return dash_table.DataTable(),button_style,button_text,alert
+        
+        
         for idx, combo in enumerate(all_combos):
             
             team_score = team_score_calcs(comp_format,combo,database,competition,results=results,print_table=False)
@@ -1413,7 +1486,7 @@ def generate_tables(n_clicks, competition, categories, results, xx_value, yy_val
     #We need to return the calculate button back
     button_style = {'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'green', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'} 
     button_text =  'Calculate'
-    return tables,button_style,button_text #, True
+    return tables,button_style,button_text,"" #, True
 
 #%% Combining 3 Tabs
 app.layout = html.Div([
