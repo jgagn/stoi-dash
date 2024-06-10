@@ -78,6 +78,7 @@ def get_color(score, max_score):
 
 #%% Setup App, Title, Authentication
 app = dash.Dash(__name__, suppress_callback_exceptions=True) #, external_stylesheets=[dbc.themes.MORPH])
+# app = dash.Dash(__name__,suppress_callback_exceptions=True, external_stylesheets=[dbc.themes.MORPH])
 
 app.title = "STOI Demo"
 
@@ -101,6 +102,7 @@ app.title = "STOI Demo"
 #I want to make the drop down selectors take up less width
 dropdown_style = {'width': '50%'}  # Adjust the width as needed
 dropdown_style1 = {'width': '100%'}  # Adjust the width as needed
+dropdown_style2 = {'width': '80%'}  # Adjust the width as needed
 tlas = ['FX', 'PH', 'SR', 'VT', 'PB', 'HB', 'AA']
 exclude_keys = ["overview", "competition_acronyms", "category_acronyms","competition_dates"]
 
@@ -367,16 +369,17 @@ overview_layout = html.Div([
                     )
                 ], style={'marginBottom': '10px'})
             ])
-        ], style={'flex': '0 0 40%'}),  # Adjust width as needed
-
-        dbc.Col([
-            html.Div([
-                html.P("Number of Athletes: 50"),
-                html.P("Top Score: 98.5"),
-                html.P("Top D Score: 6.2"),
-                html.P("Top E Score: 9.1"),
-            ], style={'paddingLeft': '20px'}) #removed border code, 'borderLeft': '1px solid #ccc'})  # Adjust padding and add a border for separation
-        ], style={'flex': '0 0 60%'})  # Adjust width as needed
+        ], style={'flex': '0 0 80%'}),  # Adjust width as needed
+        
+    #add some global stats later
+    #     dbc.Col([
+    #         html.Div([
+    #             html.P("Number of Athletes: 50"),
+    #             html.P("Top Score: 98.5"),
+    #             html.P("Top D Score: 6.2"),
+    #             html.P("Top E Score: 9.1"),
+    #         ], style={'paddingLeft': '20px'}) #removed border code, 'borderLeft': '1px solid #ccc'})  # Adjust padding and add a border for separation
+    #     ], style={'flex': '0 0 60%'})  # Adjust width as needed
     ], style={'display': 'flex', 'alignItems': 'flex-start'}),
     
     
@@ -714,7 +717,7 @@ def generate_subplot(athlete):
             # width=1000,
             height=800,
             showlegend=False,
-            margin=dict(l=40, r=40, t=40, b=40)  # Adjust the margins as needed
+            margin=dict(l=40, r=200, t=40, b=40)  # Adjust the margins as needed
         )
         
         # Remove the x-axis title for the first subplot
@@ -732,7 +735,7 @@ def generate_subplot(athlete):
             # width=1000,
             height=800,
             showlegend=False,
-            margin=dict(l=40, r=40, t=40, b=40)  # Adjust the margins as needed
+            margin=dict(l=40, r=200, t=40, b=40)  # Adjust the margins as needed
         )
         # Remove the x-axis title for the first subplot
         fig.update_xaxes(title='', row=1, col=1)
@@ -768,7 +771,7 @@ tab2_layout = html.Div([
             options = [{'label': athlete, 'value': athlete} for athlete in database.keys() if athlete not in exclude_keys],
             value=next(iter(database)),  # Default value
             multi=False,  # Single select
-            style=dropdown_style
+            style=dropdown_style2
         ),
     ]),
     
@@ -782,7 +785,7 @@ tab2_layout = html.Div([
             id='competition-dropdown2',
             # options=[{'label': database['competition_acronyms'][comp], 'value': comp} for comp in database['overview'].keys()],
             value=list(next(iter(database.values())).keys())[0],
-            style=dropdown_style
+            style=dropdown_style2
         ),
         
         html.Div("Results (can select more than 1):", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
@@ -791,7 +794,7 @@ tab2_layout = html.Div([
             # options=[{'label': day, 'value': day} for day in database[next(iter(database))].keys()],
             value=['day1','day2'],  # Default value
             multi=True,  # Allow multi-select
-            style=dropdown_style
+            style=dropdown_style2
         )
     ]),
     dcc.Store(id='results-store2', data=database),  # Store the database - needed to dynamically change data in dropdown menus
@@ -1083,14 +1086,14 @@ tab3_layout = html.Div([
                 id='competition-dropdown3',
                 options=[{'label': database['competition_acronyms'][comp], 'value': comp} for comp in database['overview'].keys()],
                 value=list(next(iter(database.values())).keys())[0],
-                style=dropdown_style1
+                style=dropdown_style2
             ),
         ], width=6),
         dbc.Col([
             html.Div("Category (can select more than 1):", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
             dcc.Dropdown(
                 id='category-dropdown3',
-                style=dropdown_style1,
+                style=dropdown_style2,
                 multi=True  # Enable multi-select
             ),
         ], width=6),
@@ -1098,7 +1101,7 @@ tab3_layout = html.Div([
             html.Div("Results:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
             dcc.Dropdown(
                 id='results-dropdown3',
-                style=dropdown_style1
+                style=dropdown_style2
             ),
         ], width=6),
     ]),
@@ -1472,7 +1475,7 @@ def generate_tables(n_clicks, competition, categories, results, xx_value, yy_val
                     if isinstance(value, (int, float)):
                         row[key] = "{:.3f}".format(value)
             
-            print(f"table data: {table_data} ")
+            # print(f"table data: {table_data} ")
             
             table = generate_table(table_data)
             tables.append(html.Div([html.H3(f'Team Scenario {i+1} using {results} results and {xx_value}-{yy_value}-{zz_value} competition format: {table_data[-1]["AA"]}'), table]))  # Add a heading for each table
@@ -1489,14 +1492,31 @@ def generate_tables(n_clicks, competition, categories, results, xx_value, yy_val
     return tables,button_style,button_text,"" #, True
 
 #%% Combining 3 Tabs
-app.layout = html.Div([
-    dcc.Tabs(id='tabs-example', value='tab-1', children=[
-        dcc.Tab(label='Competition Overview', value='tab-1'),
-        dcc.Tab(label='Individual Athlete Analysis', value='tab-2'),
-        dcc.Tab(label='Team Scenarios', value='tab-3'),
-    ]),
-    html.Div(id='tabs-content')
-])
+# app.layout = html.Div(
+#     # style={'backgroundColor': '#f0f0f0', 'height': '100vh'},  # Set background color and full height
+#     [
+#     dcc.Tabs(id='tabs-example', value='tab-1', children=[
+#         dcc.Tab(label='Competition Overview', value='tab-1'),
+#         dcc.Tab(label='Individual Athlete Analysis', value='tab-2'),
+#         dcc.Tab(label='Team Scenarios', value='tab-3'),
+#     ]),
+#     html.Div(id='tabs-content')
+# ])
+
+
+#%% Combining 3 Tabs
+
+app.layout = html.Div(
+    # style={'backgroundColor': '#f0f0f0', 'height': '100vh'},  # Set background color and full height
+    children=[
+        dcc.Tabs(id='tabs-example', value='tab-1', children=[
+            dcc.Tab(label='Competition Overview', value='tab-1'),
+            dcc.Tab(label='Individual Athlete Analysis', value='tab-2'),
+            dcc.Tab(label='Team Scenarios', value='tab-3'),
+        ]),
+        html.Div(id='tabs-content')
+    ]
+)
 
 #%%
 @app.callback(Output('tabs-content', 'children'),
@@ -1512,7 +1532,6 @@ def render_content(tab):
 #%% comment out when pusing to github
 # if __name__ == '__main__':
 #     app.run_server(debug=True)
-
 
 
 

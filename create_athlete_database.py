@@ -48,6 +48,7 @@ category_acronyms = {"SR21":"Senior (21+)",
                      "JR17": "Junior (17-18)",
                      "JR15": "Junior (14-16)",
                      "Aspire": "Aspire",
+                     "Open":"Open"
                      }
 competition_dates = {"EC2024": "2024-02-18",
                      "CC2023": "2023-05-18",
