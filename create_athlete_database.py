@@ -38,9 +38,10 @@ database = pd.read_csv(path+"/"+csv_file, encoding=encoding)
 
 #%% Acronyms
 
-competition_acronyms = {"EC2024": "Elite Canada 2024",
-                 "CC2023": "Canadian Championships 2023",
-                 "CC2024": "Canadian Championships 2024"
+competition_acronyms = {
+                    "CC2024": "Canadian Championships 2024",           
+                    "EC2024": "Elite Canada 2024",
+                    "CC2023": "Canadian Championships 2023",
                     }
 
 category_acronyms = {"SR21":"Senior (21+)",
@@ -50,9 +51,10 @@ category_acronyms = {"SR21":"Senior (21+)",
                      "Aspire": "Aspire",
                      "Open":"Open"
                      }
-competition_dates = {"EC2024": "2024-02-18",
-                     "CC2023": "2023-05-18",
-                     "CC2024": "2024-06-05"
+competition_dates = {
+                    "CC2024": "2024-06-05",
+                    "EC2024": "2024-02-18",
+                    "CC2023": "2023-05-18",
                         }
 #%% Rename column headers
 # the format is a bit silly, where there are two levels of headers

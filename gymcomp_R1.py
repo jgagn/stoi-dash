@@ -49,6 +49,9 @@ from datetime import datetime
 
 #time for debugging some progress bar stuff
 import time
+
+#garbage collection (might need to update requirements.txt)
+# import gc
 #%% Import Data 
 #use absolute path
 
@@ -105,7 +108,15 @@ dropdown_style1 = {'width': '100%'}  # Adjust the width as needed
 dropdown_style2 = {'width': '80%'}  # Adjust the width as needed
 tlas = ['FX', 'PH', 'SR', 'VT', 'PB', 'HB', 'AA']
 exclude_keys = ["overview", "competition_acronyms", "category_acronyms","competition_dates"]
-
+tla_dict = {
+            "FX":"Floor Exercise",
+            "PH":"Pommel Horse",
+            "SR":"Still Rings",
+            "VT":"Vault",
+            "PB":"Parallel Bars",
+            "HB":"Horizontal Bar",
+            "AA":"All Around",
+                }
 
 #%% Helpful functions
 
@@ -275,12 +286,7 @@ def update_table(database, competition, categories, results, apparatus, selected
             table_rows.append(table_row)
         
         table = html.Table(
-            # # Header
-            # [html.Tr([html.Th(col) for col in df.columns])] +
-            # # Body
-            # table_rows
-            # Header
-            # Header
+
             [html.Tr([html.Th(col, style={'padding': '10px', 'background-color': '#cce7ff'}) for col in df.columns])] +
             # Body
             table_rows,
@@ -290,48 +296,39 @@ def update_table(database, competition, categories, results, apparatus, selected
     
     return table
 
+#quickly sort competition options by date
+# Sort competitions by date (newest first)
+sorted_competitions = sorted(database['competition_dates'].keys(), key=lambda x: datetime.strptime(database['competition_dates'][x], '%Y-%m-%d'), reverse=True)
+
+# Create options for competition dropdown
+competition_options = [{'label': database['competition_acronyms'][comp], 'value': comp} for comp in sorted_competitions]
+
+
 # Define layout of the app
 
 #I might want to make Cateogry, and other drop downs, multi-select
 
+overview_intro = """
+Select the Competition Data you would like to visualize through the dropdown 
+
+"""
+
 overview_layout = html.Div([
-    html.H3('Competition Data Selection'),
-    # dbc.Row([
-    #     dbc.Col([
-    #         html.Div("Competition", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
-    #         dcc.Dropdown(
-    #             id='competition-dropdown',
-    #             options=[{'label': database['competition_acronyms'][comp], 'value': comp} for comp in database['overview'].keys()],
-    #             value=list(next(iter(database.values())).keys())[0],
-    #             style=dropdown_style
-    #         ),
-    #     ], width=6),
-    #     dbc.Col([
-    #         html.Div("Category (can select more than 1):", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
-    #         dcc.Dropdown(
-    #             id='category-dropdown',
-    #             style=dropdown_style,
-    #             multi=True  # Enable multi-select
-    #         ),
-    #     ], width=6),
-    #     dbc.Col([
-    #         html.Div("Results:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
-    #         dcc.Dropdown(
-    #             id='results-dropdown',
-    #             style=dropdown_style
-    #         ),
-    #     ], width=6),
-    #     dbc.Col([
-    #         html.Div("Apparatus:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
-    #         dcc.Dropdown(
-    #             id='apparatus-dropdown',
-    #             options=[{'label': app, 'value': app} for app in ["FX", "PH", "SR", "VT", "PB", "HB", "AA"]],
-    #             value='AA',
-    #             style=dropdown_style
-    #         ),
-    #     ], width=6)
-    # ]),
+    html.H3("Quick Start Guide"),
+    html.P("Welcome to the Competition Overview tab. Here's how to get started:"),
     
+    html.Ol([
+        html.Li("Use the Competition selector to choose a competition from the dropdown list."),
+        html.Li("Select one or more categories using the Category selector to filter the results accordingly."),
+        html.Li("Choose the type of results you want to see (e.g., average, best, combined) using the Results selector."),
+        html.Li("Use the Apparatus selector to further refine the data by apparatus."),
+        html.Li("View the interactive bubble plot and data table below for detailed insights.")
+    ]),
+    
+    # Customized horizontal line to separate sections
+    html.Hr(style={'borderTop': '3px solid #bbb'}),
+    html.H3('Competition Data Selection'),
+
     dbc.Row([
         dbc.Col([
             html.Div([
@@ -339,8 +336,10 @@ overview_layout = html.Div([
                     html.Div("Competition", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
                     dcc.Dropdown(
                         id='competition-dropdown',
-                        options=[{'label': database['competition_acronyms'][comp], 'value': comp} for comp in database['overview'].keys()],
-                        value=list(next(iter(database.values())).keys())[0],
+                        # options=[{'label': database['competition_acronyms'][comp], 'value': comp} for comp in database['overview'].keys()],
+                        # value=list(next(iter(database.values())).keys())[0],
+                        options=competition_options,
+                        value=sorted_competitions[0],
                         style=dropdown_style1
                     )
                 ], style={'marginBottom': '10px'}),
@@ -348,6 +347,7 @@ overview_layout = html.Div([
                     html.Div("Category (can select more than 1):", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
                     dcc.Dropdown(
                         id='category-dropdown',
+                        # value='SR21', #initializing with this value for now - should be dynamic
                         style=dropdown_style1,
                         multi=True  # Enable multi-select
                     )
@@ -356,14 +356,16 @@ overview_layout = html.Div([
                     html.Div("Results:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
                     dcc.Dropdown(
                         id='results-dropdown',
+                        # value='average', #initializing with this value for now - should be dynamic
                         style=dropdown_style1
+                    
                     )
                 ], style={'marginBottom': '10px'}),
                 html.Div([
                     html.Div("Apparatus:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
                     dcc.Dropdown(
                         id='apparatus-dropdown',
-                        options=[{'label': app, 'value': app} for app in ["FX", "PH", "SR", "VT", "PB", "HB", "AA"]],
+                        options=[{'label': tla_dict[app], 'value': app} for app in ["FX", "PH", "SR", "VT", "PB", "HB", "AA"]],
                         value='AA',
                         style=dropdown_style1
                     )
@@ -380,10 +382,27 @@ overview_layout = html.Div([
     #             html.P("Top E Score: 9.1"),
     #         ], style={'paddingLeft': '20px'}) #removed border code, 'borderLeft': '1px solid #ccc'})  # Adjust padding and add a border for separation
     #     ], style={'flex': '0 0 60%'})  # Adjust width as needed
+    
     ], style={'display': 'flex', 'alignItems': 'flex-start'}),
     
     
     dcc.Store(id='results-store', data=database),  # Store the database - needed to dynamically change data in dropdown menus
+    
+    # Customized horizontal line to separate sections
+    html.Hr(style={'borderTop': '3px solid #bbb'}),
+    
+    
+    
+    html.P("Understanding the Interactive Bubble Plot and Data Table:"),
+    html.Ol([
+        html.Li("The bubble plot visualizes scores with bubbles representing athletes. The x-axis shows the E score, and the y-axis shows the D score."),
+        html.Li("The size of the bubble corresponds to the athlete's overall score, and the color intensity represents the score magnitude."),
+        html.Li("Hover over a bubble to see detailed information, including the athlete's name, category, and scores."),
+        html.Li("Clicking a bubble highlights the corresponding athlete's row in the data table."),
+        html.Li("The data table provides a ranked list of athletes based on the selected criteria, with columns for rank, athlete name, category, D score, E score, and total score."),
+        html.Li("Rows in the data table are highlighted when corresponding bubbles are clicked, making it easier to cross-reference data between the plot and table."),
+        html.Li("Use the toolbar above the bubble plot to save the plot as an image, zoom in or out, and crop specific sections of the plot for a closer view.")
+    ]),
     
     
     dbc.Container([
@@ -394,6 +413,10 @@ overview_layout = html.Div([
                 style={'flex': '0 0 80%'},  # Adjust width as needed
             )
         ], style={'display': 'flex'}),
+        
+        # Customized horizontal line to separate sections
+        html.Hr(style={'borderTop': '3px solid #bbb'}),
+        
         html.H3("Data Table"),
         dbc.Row([
             dbc.Col(
@@ -538,7 +561,7 @@ def update_plot_and_table(results, apparatus, categories, competition, clickData
         
     fig = px.scatter(data, x='x', y='y', color='color', size='size', hover_name='name',
                      color_continuous_scale='Viridis', opacity=0.6, hover_data={'name': True,'category':True, 'x': False, 'y': False, 'size': False})
-    fig.update_layout(title=f"{database['competition_acronyms'][competition]}: D score vs. E score", 
+    fig.update_layout(title=f"{database['competition_acronyms'][competition]}: D score vs. E score for {tla_dict[apparatus]}", 
                       xaxis_title="E score", 
                       yaxis_title="D score", 
                       autosize=True,
@@ -768,8 +791,11 @@ tab2_layout = html.Div([
         html.Div("Athlete", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
         dcc.Dropdown(
             id='athlete-dropdown2',
-            options = [{'label': athlete, 'value': athlete} for athlete in database.keys() if athlete not in exclude_keys],
-            value=next(iter(database)),  # Default value
+            # options = [{'label': athlete, 'value': athlete} for athlete in database.keys() if athlete not in exclude_keys],
+            # value=next(iter(database)),  # Default value
+            options=[{'label': athlete, 'value': athlete} for athlete in sorted(database.keys()) if athlete not in exclude_keys],
+            # value=sorted([athlete for athlete in database.keys() if athlete not in exclude_keys])[0],  # Default value as the first alphabetically sorted athlete
+            value = None,
             multi=False,  # Single select
             style=dropdown_style2
         ),
@@ -1084,8 +1110,10 @@ tab3_layout = html.Div([
             html.Div("Competition", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
             dcc.Dropdown(
                 id='competition-dropdown3',
-                options=[{'label': database['competition_acronyms'][comp], 'value': comp} for comp in database['overview'].keys()],
-                value=list(next(iter(database.values())).keys())[0],
+                # options=[{'label': database['competition_acronyms'][comp], 'value': comp} for comp in database['overview'].keys()],
+                # value=list(next(iter(database.values())).keys())[0],
+                options=competition_options,
+                value=sorted_competitions[0],
                 style=dropdown_style2
             ),
         ], width=6),
@@ -1107,14 +1135,14 @@ tab3_layout = html.Div([
     ]),
     dcc.Store(id='results-store3', data=database),  # Store the database - needed to dynamically change data in dropdown menus
     html.H3('Select Competition Format'),
-    html.Div("Competition Format:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
+    html.Div("Competition Format (max 5 athletes):", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
     
     html.Div([
-        dcc.Input(id='xx-input', type='number', min=1, max=16, value=5, style={'width': '50px', 'fontSize': '16px'}),
+        dcc.Input(id='xx-input', type='number', min=1, max=5, value=5, style={'width': '50px', 'fontSize': '16px'}),
         html.Label('-', style={'padding': '0 5px'}),  # Added label with padding
-        dcc.Input(id='yy-input', type='number', min=1, max=6, value=4, style={'width': '50px',  'fontSize': '16px'}),
+        dcc.Input(id='yy-input', type='number', min=1, max=5, value=4, style={'width': '50px',  'fontSize': '16px'}),
         html.Label('-', style={'padding': '0 5px'}),  # Added label with padding
-        dcc.Input(id='zz-input', type='number', min=1, max=6, value=3, style={'width': '50px', 'fontSize': '16px'}),
+        dcc.Input(id='zz-input', type='number', min=1, max=5, value=3, style={'width': '50px', 'fontSize': '16px'}),
         html.Div("(Team Size - Competitors per Apparatus - Counting Scores per Apparatus)", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
     ]),
     
@@ -1125,32 +1153,8 @@ tab3_layout = html.Div([
     
     html.Button('Calculate', id='calculate-button', n_clicks=0, style={'display': 'block', 'margin-top': '10px', 'width': '150px', 'height': '40px', 'background-color': 'green', 'color': 'white', 'border': 'none', 'border-radius': '5px', 'fontSize': '20px'}),
     
-    #Legend for table
-    # Legend
-    # html.Div(
-    #     [
-    #         html.Div("Legend:", style={"font-weight": "bold"}),
-    #         html.Div("Counting Score: ", style={"color": colour_dict["counting"]}),
-    #         html.Div("Dropped Score: ", cstyle={"color": colour_dict["dropped"]}),
-    #         html.Div("Scratch (Would not compete in Team Scenario): ", style={"color": colour_dict["scratch"]}),
-    #     ],
-    #     style={"margin-bottom": "20px"},
-    # ),
-
-    # Legend
-    html.Div(
-        [
-            html.H3('Table Legend'),
-            dash_table.DataTable(
-                columns=[{"name": "Status", "id": "Status"}, {"name": "Description", "id": "Description"}],
-                data=legend_data,
-                style_table={"margin-top": "10px"},
-                style_cell={"textAlign": "center", "whiteSpace": "normal", "height": "auto"},
-                style_data_conditional=style_data_conditional_legend,
-            ),
-        ],
-        style={"margin-bottom": "20px"},
-    ),
+    #Add a note saying it could take a while to generte
+    html.H4('(note: depending on the number of athletes in a category, results could take a while to load... thank you for your patience)', style={'margin-top': '10px'}),
     
     #Alert container
     html.Div(id='alert-container'),
@@ -1169,6 +1173,22 @@ tab3_layout = html.Div([
             style={'position': 'absolute', 'top': '0', 'left': '50%', 'transform': 'translateX(-50%)'},
         )
     ], style={'position': 'relative'}),
+    
+    
+    # Legend
+    html.Div(
+        [
+            html.H3('Table Legend'),
+            dash_table.DataTable(
+                columns=[{"name": "Status", "id": "Status"}, {"name": "Description", "id": "Description"}],
+                data=legend_data,
+                style_table={"margin-top": "10px"},
+                style_cell={"textAlign": "center", "whiteSpace": "normal", "height": "auto"},
+                style_data_conditional=style_data_conditional_legend,
+            ),
+        ],
+        style={"margin-bottom": "20px"},
+    ),
     
 ])
 
@@ -1400,6 +1420,9 @@ def generate_tables(n_clicks, competition, categories, results, xx_value, yy_val
             progress = int((idx + 1) / total_combos * 100)
             # time.sleep(0.1)  # Simulate time-consuming calculations
             
+            #collect garbage
+            # gc.collect()
+            
         # end_time = time.monotonic()
         # time_for_all = timedelta(seconds=end_time - start_time)
         # print(f"Time for all: {time_for_all}")
@@ -1530,8 +1553,8 @@ def render_content(tab):
         return tab3_layout
 
 #%% comment out when pusing to github
-# if __name__ == '__main__':
-#     app.run_server(debug=True)
+if __name__ == '__main__':
+    app.run_server(debug=True)
 
 
 
