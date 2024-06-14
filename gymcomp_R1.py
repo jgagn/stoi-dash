@@ -314,9 +314,10 @@ Select the Competition Data you would like to visualize through the dropdown
 """
 
 overview_layout = html.Div([
-    html.H3("Quick Start Guide"),
-    html.P("Welcome to the Competition Overview tab. Here's how to get started:"),
-    
+
+    html.H3("How to Use The Competition Overview Tab"),
+    html.P("Follow these steps to interact with the data:"),
+
     html.Ol([
         html.Li("Use the Competition selector to choose a competition from the dropdown list."),
         html.Li("Select one or more categories using the Category selector to filter the results accordingly."),
@@ -390,23 +391,22 @@ overview_layout = html.Div([
     
     # Customized horizontal line to separate sections
     html.Hr(style={'borderTop': '3px solid #bbb'}),
-    
-    
-    
-    html.P("Understanding the Interactive Bubble Plot and Data Table:"),
-    html.Ol([
-        html.Li("The bubble plot visualizes scores with bubbles representing athletes. The x-axis shows the E score, and the y-axis shows the D score."),
-        html.Li("The size of the bubble corresponds to the athlete's overall score, and the color intensity represents the score magnitude."),
-        html.Li("Hover over a bubble to see detailed information, including the athlete's name, category, and scores."),
-        html.Li("Clicking a bubble highlights the corresponding athlete's row in the data table."),
-        html.Li("The data table provides a ranked list of athletes based on the selected criteria, with columns for rank, athlete name, category, D score, E score, and total score."),
-        html.Li("Rows in the data table are highlighted when corresponding bubbles are clicked, making it easier to cross-reference data between the plot and table."),
-        html.Li("Use the toolbar above the bubble plot to save the plot as an image, zoom in or out, and crop specific sections of the plot for a closer view.")
-    ]),
-    
-    
+
     dbc.Container([
         html.H3('Interactive Bubble Plot'),
+        
+        html.P("Understanding the Interactive Bubble Plot and Data Table:"),
+        html.Ol([
+            html.Li("The bubble plot visualizes scores with bubbles representing athletes. The x-axis shows the E score, and the y-axis shows the D score."),
+            html.Li("The size of the bubble corresponds to the athlete's overall score, and the color intensity represents the score magnitude."),
+            html.Li("Hover over a bubble to see detailed information, including the athlete's name, category, and scores."),
+            html.Li("Clicking a bubble highlights the corresponding athlete's row in the data table."),
+            html.Li("The data table provides a ranked list of athletes based on the selected criteria, with columns for rank, athlete name, category, D score, E score, and total score."),
+            html.Li("Rows in the data table are highlighted when corresponding bubbles are clicked, making it easier to cross-reference data between the plot and table."),
+            html.Li("Use the toolbar above the bubble plot to save the plot as an image, zoom in or out, and crop specific sections of the plot for a closer view.")
+        ]),
+        
+        
         dbc.Row([
             dbc.Col(
                 dcc.Graph(id='bubble-plot', config={'responsive': True}),
@@ -562,8 +562,8 @@ def update_plot_and_table(results, apparatus, categories, competition, clickData
     fig = px.scatter(data, x='x', y='y', color='color', size='size', hover_name='name',
                      color_continuous_scale='Viridis', opacity=0.6, hover_data={'name': True,'category':True, 'x': False, 'y': False, 'size': False})
     fig.update_layout(title=f"{database['competition_acronyms'][competition]}: D score vs. E score for {tla_dict[apparatus]}", 
-                      xaxis_title="E score", 
-                      yaxis_title="D score", 
+                      xaxis_title="Execution (E score)", 
+                      yaxis_title="Difficulty (D score)", 
                       autosize=True,
                       margin=dict(l=40, r=40, t=40, b=40),
                       # width=1000, #play with this value until you like it
@@ -782,9 +782,33 @@ def generate_subplot(athlete):
             
     return fig
 
+#legend for apparatus names
+# Function to create legend items
+def create_apparatus_legend(tla_dict):
+    return html.Ul([html.Li(f"{tla}: {description}") for tla, description in tla_dict.items()])
+def create_competition_legend(competition_acronyms):
+    return html.Ul([html.Li(f"{abbreviation}: {competition}") for abbreviation, competition in competition_acronyms.items()])
 
 
 tab2_layout = html.Div([
+    
+    html.H3("How to Use The Individual Athlete Analysis Tab"),
+    html.P("Follow these steps to interact with the data:"),
+    html.Ol([
+        html.Li("Select an athlete using the Athlete dropdown to view their scores across different competitions."),
+        html.Li("View the interactive subplot below to see the athlete's performance across all apparatus over multiple competitions."),
+        html.Li("Click on the toolbar above the plots to save the plot as an image, zoom in or out, and crop specific sections of the plot for a closer view.")
+    ]),
+    
+    #legends
+    html.P("Apparatus Legend"),
+    create_apparatus_legend(tla_dict),
+    html.P("Competition Legend"),
+    create_competition_legend(database['competition_acronyms']),
+    
+    # Customized horizontal line to separate sections
+    html.Hr(style={'borderTop': '3px solid #bbb'}),
+    
     html.H3('Plot Athlete Scores Across Competitions'),
     
     html.Div([
@@ -801,10 +825,25 @@ tab2_layout = html.Div([
         ),
     ]),
     
+    
+    
     # Subplot will be added here based on athlete dropdown selection change
     dcc.Graph(id='subplot'),
     
-    html.H3('Score Breakdown by Competition: Select a Specific Competition and Results to View'),
+    # Customized horizontal line to separate sections
+    html.Hr(style={'borderTop': '3px solid #bbb'}),
+
+    html.H3('Score Breakdown by Competition'),
+    
+    
+    html.P("Follow these steps to use the Score Breakdown Plot:"),
+    html.Ol([
+        html.Li("Use the Competition and Results dropdowns to filter the score breakdown by specific competitions and results."),
+        html.Li("Hover over the bars in the score breakdown plot to see detailed D and E scores for each apparatus."),
+        html.Li("Click on the toolbar above the plots to save the plot as an image, zoom in or out, and crop specific sections of the plot for a closer view.")
+    ]),
+    
+    
     html.Div([
         html.Div("Competition", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
         dcc.Dropdown(
@@ -1104,7 +1143,23 @@ for status, bg_color in colour_dict.items():
     )
 
 tab3_layout = html.Div([
-    html.H3('Select Data for Top Team Scores Calculations'),
+    
+    html.H3("How to Use The Team Scenarios Analysis Tab"),
+    html.P("Follow these steps to interact with the data:"),
+    html.Ol([
+        html.Li("Select a competition from the dropdown."),
+        html.Li("Choose one or more categories of athletes to include in the analysis."),
+        html.Li("Select specific results to analyze (e.g., average, best, combined, etc.)."),
+        html.Li("Define the competition format by entering the number of competitors per apparatus."),
+        html.Li("Set the number of top team scenarios you want to calculate and view."),
+        html.Li("Click the 'Calculate' button to generate and view the team scenarios based on your selections."),
+        html.Li("The results will display the top team scenarios with scores for each apparatus and overall team scores."),
+    ]),
+    
+    html.Hr(style={'borderTop': '3px solid #bbb'}),
+    
+    
+    html.H3('Make Selections for Top Team Scores Calculations'),
     dbc.Row([
         dbc.Col([
             html.Div("Competition", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
@@ -1122,6 +1177,7 @@ tab3_layout = html.Div([
             dcc.Dropdown(
                 id='category-dropdown3',
                 style=dropdown_style2,
+                # value = "SR21",
                 multi=True  # Enable multi-select
             ),
         ], width=6),
@@ -1134,7 +1190,10 @@ tab3_layout = html.Div([
         ], width=6),
     ]),
     dcc.Store(id='results-store3', data=database),  # Store the database - needed to dynamically change data in dropdown menus
-    html.H3('Select Competition Format'),
+    
+    # html.Hr(style={'borderTop': '3px solid #bbb'}),
+    
+    # html.H3('Select Competition Format'),
     html.Div("Competition Format (max 5 athletes):", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
     
     html.Div([
@@ -1163,6 +1222,7 @@ tab3_layout = html.Div([
     dcc.Interval(id='progress-interval', interval=500, n_intervals=0,disabled=True),  # 500 ms interval for progress updates
     
     
+    
     # Container for the progress spinner and tables- add CSS formating to make sure the spinner/loading element is at the top of the table
     html.Div(id='progress-tables-container', children=[
         dcc.Loading(
@@ -1174,7 +1234,7 @@ tab3_layout = html.Div([
         )
     ], style={'position': 'relative'}),
     
-    
+    html.Hr(style={'borderTop': '3px solid #bbb'}),
     # Legend
     html.Div(
         [
