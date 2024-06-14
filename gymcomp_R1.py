@@ -424,9 +424,12 @@ overview_layout = html.Div([
                 style={'flex': '0 0 100%'},  # Adjust width as needed
             )
         ], style={'display': 'flex'})
-    ], style={'boxSizing': 'border-box', 'position': 'relative', 'width': '100%', 'height': '0', 'paddingBottom': '60%'})
-
-
+    ], style={'boxSizing': 'border-box', 'position': 'relative', 'width': '100%', 'height': '0', 'paddingBottom': '60%'}),
+    
+    
+    #bottom note:
+    # html.P('for any additional inquiries, please email info@stoianalytics.com')
+        
     
 ])
 
