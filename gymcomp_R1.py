@@ -321,7 +321,7 @@ overview_layout = html.Div([
     html.Ol([
         html.Li("Use the Competition selector to choose a competition from the dropdown list."),
         html.Li("Select one or more categories using the Category selector to filter the results accordingly."),
-        html.Li("Choose the type of results you want to see (e.g., average, best, combined) using the Results selector."),
+        html.Li("Choose the type of results you want to see (ex. day 1, day 2, average, best) using the Results selector."),
         html.Li("Use the Apparatus selector to further refine the data by apparatus."),
         html.Li("View the interactive bubble plot and data table below for detailed insights.")
     ]),
@@ -1149,7 +1149,7 @@ tab3_layout = html.Div([
     html.Ol([
         html.Li("Select a competition from the dropdown."),
         html.Li("Choose one or more categories of athletes to include in the analysis."),
-        html.Li("Select specific results to analyze (e.g., average, best, combined, etc.)."),
+        html.Li("Select specific results to analyze (ex. average, best, combined, etc.)."),
         html.Li("Define the competition format by entering the number of competitors per apparatus."),
         html.Li("Set the number of top team scenarios you want to calculate and view."),
         html.Li("Click the 'Calculate' button to generate and view the team scenarios based on your selections."),
