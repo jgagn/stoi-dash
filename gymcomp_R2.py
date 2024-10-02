@@ -64,8 +64,8 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Construct the absolute path to the file
 #file path and csv file name
-path = "test_data/Combined"
-pkl_file = "gymcan_mag_athletes"
+path = "test_data/OlympicData"
+pkl_file = "OG_mag_athletes"
 file_path = os.path.join(base_dir, path+"/"+pkl_file)
 
 
@@ -110,13 +110,14 @@ app.title = "STOI Demo"
 dropdown_style = {'width': '50%'}  # Adjust the width as needed
 dropdown_style1 = {'width': '100%'}  # Adjust the width as needed
 dropdown_style2 = {'width': '80%'}  # Adjust the width as needed
-tlas = ['FX', 'PH', 'SR', 'VT', 'PB', 'HB', 'AA']
+tlas = ['FX', 'PH', 'SR', 'VT1','VT2', 'PB', 'HB', 'AA']
 exclude_keys = ["overview", "competition_acronyms", "category_acronyms","competition_dates"]
 tla_dict = {
             "FX":"Floor Exercise",
             "PH":"Pommel Horse",
             "SR":"Still Rings",
-            "VT":"Vault",
+            "VT1":"Vault 1",
+            "VT2":"Vault 2",
             "PB":"Parallel Bars",
             "HB":"Horizontal Bar",
             "AA":"All Around",
@@ -370,7 +371,7 @@ overview_layout = html.Div([
                     html.Div("Apparatus:", style={'marginRight': '10px', 'verticalAlign': 'middle'}),
                     dcc.Dropdown(
                         id='apparatus-dropdown',
-                        options=[{'label': tla_dict[app], 'value': app} for app in ["FX", "PH", "SR", "VT", "PB", "HB", "AA"]],
+                        options=[{'label': tla_dict[app], 'value': app} for app in tlas],
                         value='AA',
                         style=dropdown_style1
                     )
